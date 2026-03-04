@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { PipefyCard, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface HostPageProps {
   phase9Cards: PipefyCard[];
@@ -16,8 +17,22 @@ interface HostData {
   phase10Count: number;
 }
 
+type SortKey = "name" | "total" | "avgDays" | "phase9" | "phase10";
+type SortDir = "asc" | "desc";
+
 export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("total");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
 
   const hosts = useMemo(() => {
     const allCards = [...phase9Cards, ...phase10Cards];
@@ -37,14 +52,24 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
       phase10Count: cards.filter((c) => phase10Cards.includes(c)).length,
     }));
 
-    hostList.sort((a, b) => b.cards.length - a.cards.length);
     return hostList;
   }, [phase9Cards, phase10Cards]);
 
-  const filtered = useMemo(
-    () => hosts.filter((h) => h.name.toLowerCase().includes(search.toLowerCase())),
-    [hosts, search]
-  );
+  const filtered = useMemo(() => {
+    const list = hosts.filter((h) => h.name.toLowerCase().includes(search.toLowerCase()));
+    const mul = sortDir === "asc" ? 1 : -1;
+    list.sort((a, b) => {
+      switch (sortKey) {
+        case "name": return mul * a.name.localeCompare(b.name);
+        case "total": return mul * (a.cards.length - b.cards.length);
+        case "avgDays": return mul * (a.avgDays - b.avgDays);
+        case "phase9": return mul * (a.phase9Count - b.phase9Count);
+        case "phase10": return mul * (a.phase10Count - b.phase10Count);
+        default: return 0;
+      }
+    });
+    return list;
+  }, [hosts, search, sortKey, sortDir]);
 
   const getInitials = (name: string) =>
     name
@@ -53,6 +78,19 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
       .map((w) => w[0])
       .join("")
       .toUpperCase();
+
+  const SortBtn = ({ label, k }: { label: string; k: SortKey }) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => toggleSort(k)}
+      className={`gap-1 text-xs h-7 px-2 ${sortKey === k ? "text-primary" : "text-muted-foreground"}`}
+    >
+      {label}
+      <ArrowUpDown className="w-3 h-3" />
+      {sortKey === k && <span className="text-[10px]">{sortDir === "asc" ? "↑" : "↓"}</span>}
+    </Button>
+  );
 
   return (
     <div className="space-y-6">
@@ -67,6 +105,16 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
             className="pl-9 bg-secondary border-border text-sm"
           />
         </div>
+      </div>
+
+      {/* Sort buttons */}
+      <div className="flex items-center gap-1 flex-wrap">
+        <span className="text-xs text-muted-foreground mr-1">Ordenar:</span>
+        <SortBtn label="Nome" k="name" />
+        <SortBtn label="Total" k="total" />
+        <SortBtn label="Média Dias" k="avgDays" />
+        <SortBtn label="Fase 9" k="phase9" />
+        <SortBtn label="Fase 10" k="phase10" />
       </div>
 
       <div className="space-y-2">
