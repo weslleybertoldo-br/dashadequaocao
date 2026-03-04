@@ -23,7 +23,7 @@ interface PhaseResponse {
   errors?: { message: string }[];
 }
 
-const PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipefy-proxy`;
+const PIPEFY_URL = "https://corsproxy.io/?url=https://api.pipefy.com/graphql";
 
 export async function fetchAllCardsForPhase(
   token: string,
@@ -37,10 +37,13 @@ export async function fetchAllCardsForPhase(
     const afterClause = cursor ? `, after: "${cursor}"` : "";
     const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } } } } } }`;
 
-    const res = await fetch(PROXY_URL, {
+    const res = await fetch(PIPEFY_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, query }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ query }),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
