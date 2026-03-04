@@ -5,8 +5,16 @@ import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -27,6 +35,32 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
+
+  const handleUnlockHidden = () => {
+    if (password === "***REDACTED_PASSWORD***") {
+      setHiddenUnlocked(true);
+      setShowPasswordDialog(false);
+      setActiveTab("no-adequacao");
+      setPassword("");
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
+  const handleSettingsClick = () => {
+    if (hiddenUnlocked) {
+      setActiveTab("no-adequacao");
+    } else {
+      setShowPasswordDialog(true);
+      setPassword("");
+      setPasswordError(false);
+    }
+  };
 
   const doRefresh = useCallback(() => {
     const config = loadConfig();
@@ -36,12 +70,10 @@ const Index = () => {
     }
   }, [fetchData]);
 
-  // Initial load
   useEffect(() => {
     doRefresh();
   }, []);
 
-  // Auto-refresh at 10:00 and 18:20 Brasília time
   useEffect(() => {
     const SCHEDULES = [
       { hour: 10, minute: 0 },
@@ -73,14 +105,14 @@ const Index = () => {
       }
 
       setNextRefresh(getNextSchedule());
-    }, 4000); // check every 4 seconds
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [doRefresh]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (value !== "config" && !data && !loading) {
+    if (!data && !loading) {
       const config = loadConfig();
       if (config.token) doRefresh();
     }
@@ -88,7 +120,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex items-center justify-between h-14 px-6">
           <div className="flex items-center gap-3">
@@ -99,7 +130,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {activeTab !== "config" && (
+            {activeTab !== "no-adequacao" && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -130,11 +161,25 @@ const Index = () => {
               </>
             )}
 
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSettingsClick}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Sem Adequação</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <div className="container px-6 py-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="bg-secondary border border-border mb-6">
@@ -144,11 +189,7 @@ const Index = () => {
             <TabsTrigger value="hosts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Por Anfitrião
             </TabsTrigger>
-            <TabsTrigger value="no-adequacao" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Sem Adequação
-            </TabsTrigger>
           </TabsList>
-
 
           <TabsContent value="overview">
             {loading && (
@@ -161,9 +202,6 @@ const Index = () => {
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <AlertTriangle className="w-8 h-8 text-destructive" />
                 <p className="text-sm text-destructive">{error}</p>
-                <Button variant="outline" size="sm" onClick={() => setActiveTab("config")}>
-                  Ir para Configuração
-                </Button>
               </div>
             )}
             {data && !loading && (
@@ -186,9 +224,6 @@ const Index = () => {
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <AlertTriangle className="w-8 h-8 text-destructive" />
                 <p className="text-sm text-destructive">{error}</p>
-                <Button variant="outline" size="sm" onClick={() => setActiveTab("config")}>
-                  Ir para Configuração
-                </Button>
               </div>
             )}
             {data && !loading && (
@@ -196,30 +231,55 @@ const Index = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="no-adequacao">
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-24 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Carregando dados do Pipefy...</p>
-              </div>
-            )}
-            {error && (
-              <div className="flex flex-col items-center justify-center py-24 gap-3">
-                <AlertTriangle className="w-8 h-8 text-destructive" />
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            )}
-            {data && !loading && (
-              <NoAdequacaoPage
-                phase9Cards={data.phase9Cards}
-                phase10Cards={data.phase10Cards}
-                phase5Cards={data.phase5Cards}
-              />
-            )}
-          </TabsContent>
+          {hiddenUnlocked && (
+            <TabsContent value="no-adequacao">
+              {loading && (
+                <div className="flex flex-col items-center justify-center py-24 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Carregando dados do Pipefy...</p>
+                </div>
+              )}
+              {error && (
+                <div className="flex flex-col items-center justify-center py-24 gap-3">
+                  <AlertTriangle className="w-8 h-8 text-destructive" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+              {data && !loading && (
+                <NoAdequacaoPage
+                  phase9Cards={data.phase9Cards}
+                  phase10Cards={data.phase10Cards}
+                  phase5Cards={data.phase5Cards}
+                />
+              )}
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Acesso Restrito</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Digite a senha..."
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setPasswordError(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handleUnlockHidden()}
+              className={passwordError ? "border-destructive" : ""}
+            />
+            {passwordError && (
+              <p className="text-xs text-destructive">Senha incorreta</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUnlockHidden}>Entrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
