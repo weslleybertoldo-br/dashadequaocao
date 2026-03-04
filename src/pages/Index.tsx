@@ -41,7 +41,7 @@ const Index = () => {
   const [configUnlocked, setConfigUnlocked] = useState(false);
 
   const handleUnlockConfig = () => {
-    if (password === "admin") {
+    if (password === "***REDACTED_PASSWORD***") {
       setConfigUnlocked(true);
       setShowPasswordDialog(false);
       setActiveTab("config");
