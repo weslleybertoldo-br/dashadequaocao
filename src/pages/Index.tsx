@@ -146,14 +146,8 @@ const Index = () => {
             <TabsTrigger value="hosts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Por Anfitrião
             </TabsTrigger>
-            <TabsTrigger value="config" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Configuração
-            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="config">
-            <ConfigPage />
-          </TabsContent>
 
           <TabsContent value="overview">
             {loading && (
