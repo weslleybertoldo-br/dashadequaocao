@@ -1,31 +1,93 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePipefyData } from "@/hooks/usePipefyData";
 import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { ConfigPage } from "@/components/ConfigPage";
-import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+function getBrasiliaTime() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+}
+
+function formatTime(date: Date | null) {
+  if (!date) return "—";
+  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
 
 const Index = () => {
   const { data, loading, error, fetchData } = usePipefyData();
   const [activeTab, setActiveTab] = useState("overview");
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [nextRefresh, setNextRefresh] = useState<string>("");
 
+  const doRefresh = useCallback(() => {
+    const config = loadConfig();
+    if (config.token) {
+      fetchData();
+      setLastUpdate(new Date());
+    }
+  }, [fetchData]);
+
+  // Initial load
   useEffect(() => {
     const config = loadConfig();
     if (!config.token) {
       setActiveTab("config");
     } else {
-      fetchData();
+      doRefresh();
     }
   }, []);
+
+  // Auto-refresh at 10:00 and 18:20 Brasília time
+  useEffect(() => {
+    const SCHEDULES = [
+      { hour: 10, minute: 0 },
+      { hour: 18, minute: 20 },
+    ];
+
+    const getNextSchedule = () => {
+      const now = getBrasiliaTime();
+      for (const s of SCHEDULES) {
+        if (now.getHours() < s.hour || (now.getHours() === s.hour && now.getMinutes() < s.minute)) {
+          return `${String(s.hour).padStart(2, "0")}:${String(s.minute).padStart(2, "0")}`;
+        }
+      }
+      return `${String(SCHEDULES[0].hour).padStart(2, "0")}:${String(SCHEDULES[0].minute).padStart(2, "0")} (amanhã)`;
+    };
+
+    setNextRefresh(getNextSchedule());
+
+    const interval = setInterval(() => {
+      const now = getBrasiliaTime();
+      const h = now.getHours();
+      const m = now.getMinutes();
+
+      for (const s of SCHEDULES) {
+        if (h === s.hour && m === s.minute && now.getSeconds() < 5) {
+          doRefresh();
+          break;
+        }
+      }
+
+      setNextRefresh(getNextSchedule());
+    }, 4000); // check every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [doRefresh]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     if (value !== "config" && !data && !loading) {
       const config = loadConfig();
-      if (config.token) fetchData();
+      if (config.token) doRefresh();
     }
   };
 
@@ -42,16 +104,34 @@ const Index = () => {
           </div>
 
           {activeTab !== "config" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchData}
-              disabled={loading}
-              className="gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
+            <div className="flex items-center gap-4">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span className="font-mono">
+                      {lastUpdate ? formatTime(lastUpdate) : "—"}
+                    </span>
+                    <span className="text-muted-foreground/50">|</span>
+                    <span className="text-muted-foreground/70">próx: {nextRefresh}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Auto-refresh às 10:00 e 18:20 (Brasília)</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={doRefresh}
+                disabled={loading}
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                Atualizar
+              </Button>
+            </div>
           )}
         </div>
       </header>
