@@ -25,8 +25,6 @@ interface PhaseResponse {
   errors?: { message: string }[];
 }
 
-const PIPEFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipefy-proxy`;
-
 export async function fetchAllCardsForPhase(
   token: string,
   phaseId: string
@@ -83,9 +81,6 @@ export async function fetchAllCardsForPhase(
     const json = responseData as PhaseResponse;
     if (json.errors?.length) throw new Error(json.errors[0].message);
 
-
-    if (json.errors?.length) throw new Error(json.errors[0].message);
-
     const cardsData = json.data.phase.cards;
     allCards.push(...cardsData.edges.map((e) => e.node));
     hasNextPage = cardsData.pageInfo.hasNextPage;
@@ -108,6 +103,19 @@ export interface PipefyConfig {
   phase9: string;
   phase10: string;
   phase5: string;
+}
+
+export async function loadConfigFromServer(): Promise<PipefyConfig> {
+  const { data, error } = await supabase.functions.invoke("pipefy-config");
+  
+  const serverConfig = (!error && data) ? data : {};
+  
+  return {
+    token: localStorage.getItem("pipefy_token") || "__USE_SERVER_TOKEN__",
+    phase9: localStorage.getItem("pipefy_phase9") || serverConfig.phase9 || "323044836",
+    phase10: localStorage.getItem("pipefy_phase10") || serverConfig.phase10 || "326702699",
+    phase5: localStorage.getItem("pipefy_phase5") || serverConfig.phase5 || "333848127",
+  };
 }
 
 export function loadConfig(): PipefyConfig {

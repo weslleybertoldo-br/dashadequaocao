@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, fetchAllCardsForPhase, loadConfig } from "@/lib/pipefy";
+import { PipefyCard, fetchAllCardsForPhase, loadConfigFromServer } from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -13,12 +13,12 @@ export function usePipefyData() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    const config = loadConfig();
-
     setLoading(true);
     setError(null);
 
     try {
+      const config = await loadConfigFromServer();
+
       const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase9),
         fetchAllCardsForPhase(config.token, config.phase10),
