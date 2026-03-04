@@ -134,7 +134,7 @@ const Index = () => {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-display font-bold text-sm">S</span>
             </div>
-            <h1 className="font-display font-bold text-lg tracking-tight">Seazone OPS</h1>
+            <h1 className="font-display font-bold text-lg tracking-tight">KPI Adequação - Final do Funil</h1>
           </div>
 
           <div className="flex items-center gap-4">
