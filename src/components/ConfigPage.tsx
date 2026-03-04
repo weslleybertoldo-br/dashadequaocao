@@ -18,20 +18,10 @@ export function ConfigPage() {
     <div className="max-w-xl mx-auto space-y-8">
       <div>
         <h2 className="text-2xl font-display font-bold text-foreground mb-2">Configuração</h2>
-        <p className="text-muted-foreground text-sm">Configure o token e os IDs das fases do Pipefy.</p>
+        <p className="text-muted-foreground text-sm">Configure os IDs das fases do Pipefy. O token é gerenciado automaticamente pelo backend.</p>
       </div>
 
       <div className="space-y-5 bg-card p-6 rounded-lg border border-border">
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Token Pipefy (Bearer)</Label>
-          <Input
-            type="password"
-            value={config.token}
-            onChange={(e) => setConfig({ ...config, token: e.target.value })}
-            placeholder="Insira seu token..."
-            className="bg-secondary border-border font-mono text-sm"
-          />
-        </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
