@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface PipefyCard {
   id: string;
   title: string;
@@ -23,7 +25,7 @@ interface PhaseResponse {
   errors?: { message: string }[];
 }
 
-const PIPEFY_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.pipefy.com/graphql')}`;
+const PIPEFY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipefy-proxy`;
 
 export async function fetchAllCardsForPhase(
   token: string,
@@ -37,18 +39,20 @@ export async function fetchAllCardsForPhase(
     const afterClause = cursor ? `, after: "${cursor}"` : "";
     const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } } } } } }`;
 
-    const res = await fetch(PIPEFY_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ query }),
+    const { data: responseData, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
+      body: { token, query },
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (functionError) {
+      throw new Error(functionError.message || "Erro ao chamar pipefy-proxy");
+    }
 
-    const json: PhaseResponse = await res.json();
+    const json = responseData as PhaseResponse;
+    if (!json?.data?.phase?.cards) {
+      throw new Error("Resposta inválida do proxy");
+    }
+
+
     if (json.errors?.length) throw new Error(json.errors[0].message);
 
     const cardsData = json.data.phase.cards;
