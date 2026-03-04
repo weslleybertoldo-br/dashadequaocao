@@ -47,8 +47,12 @@ export async function fetchAllCardsForPhase(
         await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
       }
 
+      const bodyPayload: any = { query };
+      if (token && token !== "__USE_SERVER_TOKEN__") {
+        bodyPayload.token = token;
+      }
       const { data, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
-        body: { token, query },
+        body: bodyPayload,
       });
 
       if (functionError) {
@@ -108,7 +112,7 @@ export interface PipefyConfig {
 
 export function loadConfig(): PipefyConfig {
   return {
-    token: localStorage.getItem("pipefy_token") || "",
+    token: localStorage.getItem("pipefy_token") || "__USE_SERVER_TOKEN__",
     phase9: localStorage.getItem("pipefy_phase9") || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || "333848127",

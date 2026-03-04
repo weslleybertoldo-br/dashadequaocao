@@ -14,10 +14,6 @@ export function usePipefyData() {
 
   const fetchData = useCallback(async () => {
     const config = loadConfig();
-    if (!config.token) {
-      setError("Token não configurado. Vá para a aba Configuração.");
-      return;
-    }
 
     setLoading(true);
     setError(null);

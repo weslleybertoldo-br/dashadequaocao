@@ -25,7 +25,7 @@ async function fetchWithRetry(token: string, query: string, variables?: any) {
     });
 
     if (retryableStatuses.includes(response.status)) {
-      await response.text(); // consume body
+      await response.text();
       if (attempt < maxRetries - 1) continue;
       return { error: `Pipefy returned HTTP ${response.status} after ${maxRetries} attempts`, status: 502 };
     }
@@ -47,7 +47,10 @@ serve(async (req) => {
   }
 
   try {
-    const { token, query, variables } = await req.json();
+    const { token: bodyToken, query, variables } = await req.json();
+
+    // Use token from request body, or fall back to the stored secret
+    const token = bodyToken || Deno.env.get("PIPEFY_TOKEN");
 
     if (!token || !query) {
       return new Response(
