@@ -72,12 +72,7 @@ const Index = () => {
 
   // Initial load
   useEffect(() => {
-    const config = loadConfig();
-    if (!config.token) {
-      setActiveTab("config");
-    } else {
-      doRefresh();
-    }
+    doRefresh();
   }, []);
 
   // Auto-refresh at 10:00 and 18:20 Brasília time
