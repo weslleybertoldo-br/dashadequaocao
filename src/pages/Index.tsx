@@ -5,8 +5,16 @@ import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { ConfigPage } from "@/components/ConfigPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -27,6 +35,32 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [configUnlocked, setConfigUnlocked] = useState(false);
+
+  const handleUnlockConfig = () => {
+    if (password === "admin") {
+      setConfigUnlocked(true);
+      setShowPasswordDialog(false);
+      setActiveTab("config");
+      setPassword("");
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
+  const handleSettingsClick = () => {
+    if (configUnlocked) {
+      setActiveTab("config");
+    } else {
+      setShowPasswordDialog(true);
+      setPassword("");
+      setPasswordError(false);
+    }
+  };
 
   const doRefresh = useCallback(() => {
     const config = loadConfig();
@@ -103,36 +137,54 @@ const Index = () => {
             <h1 className="font-display font-bold text-lg tracking-tight">Seazone OPS</h1>
           </div>
 
-          {activeTab !== "config" && (
-            <div className="flex items-center gap-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span className="font-mono">
-                      {lastUpdate ? formatTime(lastUpdate) : "—"}
-                    </span>
-                    <span className="text-muted-foreground/50">|</span>
-                    <span className="text-muted-foreground/70">próx: {nextRefresh}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">Auto-refresh às 10:00 e 18:20 (Brasília)</p>
-                </TooltipContent>
-              </Tooltip>
+          <div className="flex items-center gap-4">
+            {activeTab !== "config" && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="font-mono">
+                        {lastUpdate ? formatTime(lastUpdate) : "—"}
+                      </span>
+                      <span className="text-muted-foreground/50">|</span>
+                      <span className="text-muted-foreground/70">próx: {nextRefresh}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Auto-refresh às 10:00 e 18:20 (Brasília)</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={doRefresh}
-                disabled={loading}
-                className="gap-2 text-muted-foreground hover:text-foreground"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                Atualizar
-              </Button>
-            </div>
-          )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={doRefresh}
+                  disabled={loading}
+                  className="gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  Atualizar
+                </Button>
+              </>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSettingsClick}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">Configurações</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </header>
 
@@ -194,8 +246,39 @@ const Index = () => {
               <HostPage phase9Cards={data.phase9Cards} phase10Cards={data.phase10Cards} />
             )}
           </TabsContent>
+
+          {configUnlocked && (
+            <TabsContent value="config">
+              <ConfigPage />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
+
+      {/* Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Acesso às Configurações</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Digite a senha..."
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setPasswordError(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handleUnlockConfig()}
+              className={passwordError ? "border-destructive" : ""}
+            />
+            {passwordError && (
+              <p className="text-xs text-destructive">Senha incorreta</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUnlockConfig}>Entrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
