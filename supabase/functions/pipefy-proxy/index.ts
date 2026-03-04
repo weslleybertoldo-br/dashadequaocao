@@ -6,6 +6,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Phase ID defaults from secrets
+const PHASE_DEFAULTS: Record<string, string | undefined> = {
+  phase9: Deno.env.get("PIPEFY_PHASE9_ID"),
+  phase10: Deno.env.get("PIPEFY_PHASE10_ID"),
+  phase5: Deno.env.get("PIPEFY_PHASE5_ID"),
+};
+
 async function fetchWithRetry(token: string, query: string, variables?: any) {
   const maxRetries = 3;
   const retryableStatuses = [502, 503, 504];
@@ -49,7 +56,6 @@ serve(async (req) => {
   try {
     const { token: bodyToken, query, variables } = await req.json();
 
-    // Use token from request body, or fall back to the stored secret
     const token = bodyToken || Deno.env.get("PIPEFY_TOKEN");
 
     if (!token || !query) {
