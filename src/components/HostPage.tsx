@@ -145,19 +145,6 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
               </div>
             </div>
 
-            {/* Phase tags */}
-            <div className="flex items-center gap-2">
-              {host.phase9Count > 0 && (
-                <span className="inline-flex items-center gap-1 bg-warning/15 text-warning text-xs font-medium px-2.5 py-1 rounded-full">
-                  Fase 9: {host.phase9Count}
-                </span>
-              )}
-              {host.phase10Count > 0 && (
-                <span className="inline-flex items-center gap-1 bg-destructive/15 text-destructive text-xs font-medium px-2.5 py-1 rounded-full">
-                  Fase 10: {host.phase10Count}
-                </span>
-              )}
-            </div>
           </div>
         ))}
 
