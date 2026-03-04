@@ -23,7 +23,7 @@ interface PhaseResponse {
   errors?: { message: string }[];
 }
 
-const PIPEFY_URL = "https://corsproxy.io/?url=https://api.pipefy.com/graphql";
+const PIPEFY_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.pipefy.com/graphql')}`;
 
 export async function fetchAllCardsForPhase(
   token: string,
