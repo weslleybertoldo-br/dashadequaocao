@@ -39,18 +39,45 @@ export async function fetchAllCardsForPhase(
     const afterClause = cursor ? `, after: "${cursor}"` : "";
     const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } } } } } }`;
 
-    const { data: responseData, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
-      body: { token, query },
-    });
+    let lastError: Error | null = null;
+    let responseData: any = null;
 
-    if (functionError) {
-      throw new Error(functionError.message || "Erro ao chamar pipefy-proxy");
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+      }
+
+      const { data, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
+        body: { token, query },
+      });
+
+      if (functionError) {
+        lastError = new Error(functionError.message || "Erro ao chamar pipefy-proxy");
+        continue;
+      }
+
+      const json = data as any;
+      if (json?.error && /502|504|Bad gateway|Gateway time/i.test(JSON.stringify(json))) {
+        lastError = new Error(`Pipefy indisponível (tentativa ${attempt + 1}/3)`);
+        continue;
+      }
+
+      if (!json?.data?.phase?.cards) {
+        lastError = new Error("Resposta inválida do proxy");
+        continue;
+      }
+
+      responseData = json;
+      lastError = null;
+      break;
+    }
+
+    if (lastError || !responseData) {
+      throw lastError || new Error("Falha após 3 tentativas");
     }
 
     const json = responseData as PhaseResponse;
-    if (!json?.data?.phase?.cards) {
-      throw new Error("Resposta inválida do proxy");
-    }
+    if (json.errors?.length) throw new Error(json.errors[0].message);
 
 
     if (json.errors?.length) throw new Error(json.errors[0].message);
