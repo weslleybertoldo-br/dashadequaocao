@@ -6,6 +6,41 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function fetchWithRetry(token: string, query: string, variables?: any) {
+  const maxRetries = 3;
+  const retryableStatuses = [502, 503, 504];
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+    }
+
+    const response = await fetch("https://api.pipefy.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (retryableStatuses.includes(response.status)) {
+      await response.text(); // consume body
+      if (attempt < maxRetries - 1) continue;
+      return { error: `Pipefy returned HTTP ${response.status} after ${maxRetries} attempts`, status: 502 };
+    }
+
+    const text = await response.text();
+    try {
+      return { data: JSON.parse(text), status: 200 };
+    } catch {
+      return { error: `Pipefy returned non-JSON (HTTP ${response.status})`, body: text.substring(0, 500), status: 502 };
+    }
+  }
+
+  return { error: "Max retries reached", status: 502 };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,32 +56,10 @@ serve(async (req) => {
       );
     }
 
-    const response = await fetch("https://api.pipefy.com/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ query, variables }),
-    });
+    const result = await fetchWithRetry(token, query, variables);
 
-    const responseText = await response.text();
-
-    // Try to parse as JSON; if it fails, return the raw text as an error
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: `Pipefy returned non-JSON (HTTP ${response.status})`,
-          body: responseText.substring(0, 500),
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(result.data ?? { error: result.error, body: result.body }), {
+      status: result.status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
