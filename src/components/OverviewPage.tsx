@@ -92,8 +92,6 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards }: Overvie
   const stats = [
     { label: "Total Fases 9+10", value: pipe1Cards.length },
     { label: "Total Fase 5", value: phase5Cards.length },
-    { label: "Média Dias F9", value: avgDays(phase9Cards) },
-    { label: "Média Dias F10", value: avgDays(phase10Cards) },
     { label: "Média Dias F9+F10", value: avgDays(pipe1Cards) },
   ];
 
