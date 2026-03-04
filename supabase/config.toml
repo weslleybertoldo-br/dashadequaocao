@@ -1,0 +1,4 @@
+project_id = "zitbueguxapwcgvcqcfh"
+
+[functions.pipefy-proxy]
+verify_jwt = false
