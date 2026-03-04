@@ -4,17 +4,9 @@ import { usePipefyData } from "@/hooks/usePipefyData";
 import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
-import { ConfigPage } from "@/components/ConfigPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
+import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
+import { Loader2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -35,32 +27,6 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
-  const [configUnlocked, setConfigUnlocked] = useState(false);
-
-  const handleUnlockConfig = () => {
-    if (password === "***REDACTED_PASSWORD***") {
-      setConfigUnlocked(true);
-      setShowPasswordDialog(false);
-      setActiveTab("config");
-      setPassword("");
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-    }
-  };
-
-  const handleSettingsClick = () => {
-    if (configUnlocked) {
-      setActiveTab("config");
-    } else {
-      setShowPasswordDialog(true);
-      setPassword("");
-      setPasswordError(false);
-    }
-  };
 
   const doRefresh = useCallback(() => {
     const config = loadConfig();
@@ -164,21 +130,6 @@ const Index = () => {
               </>
             )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSettingsClick}
-                  className="text-muted-foreground hover:text-foreground h-8 w-8"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Configurações</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
       </header>
@@ -192,6 +143,9 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="hosts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Por Anfitrião
+            </TabsTrigger>
+            <TabsTrigger value="no-adequacao" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Sem Adequação
             </TabsTrigger>
           </TabsList>
 
@@ -242,38 +196,30 @@ const Index = () => {
             )}
           </TabsContent>
 
-          {configUnlocked && (
-            <TabsContent value="config">
-              <ConfigPage />
-            </TabsContent>
-          )}
+          <TabsContent value="no-adequacao">
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-24 gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Carregando dados do Pipefy...</p>
+              </div>
+            )}
+            {error && (
+              <div className="flex flex-col items-center justify-center py-24 gap-3">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+            {data && !loading && (
+              <NoAdequacaoPage
+                phase9Cards={data.phase9Cards}
+                phase10Cards={data.phase10Cards}
+                phase5Cards={data.phase5Cards}
+              />
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Acesso às Configurações</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Digite a senha..."
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setPasswordError(false); }}
-              onKeyDown={(e) => e.key === "Enter" && handleUnlockConfig()}
-              className={passwordError ? "border-destructive" : ""}
-            />
-            {passwordError && (
-              <p className="text-xs text-destructive">Senha incorreta</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button onClick={handleUnlockConfig}>Entrar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
