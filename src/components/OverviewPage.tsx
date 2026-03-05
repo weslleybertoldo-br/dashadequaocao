@@ -148,9 +148,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
         {/* Entradas Fase 9 Hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Entradas Fase 9 Hoje</p>
-          {todayLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
-          ) : entradasHoje && entradasHoje.count > 0 ? (
+          {entradasHoje && entradasHoje.count > 0 ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
