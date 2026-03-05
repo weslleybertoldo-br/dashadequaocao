@@ -5,6 +5,7 @@ interface PipefyData {
   phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
+  phase11Cards: PipefyCard[];
 }
 
 export function usePipefyData() {
@@ -19,13 +20,14 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
-      const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
+      const [phase9Cards, phase10Cards, phase5Cards, phase11Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase9),
         fetchAllCardsForPhase(config.token, config.phase10),
         fetchAllCardsForPhase(config.token, config.phase5),
+        fetchAllCardsForPhase(config.token, config.phase11),
       ]);
 
-      setData({ phase9Cards, phase10Cards, phase5Cards });
+      setData({ phase9Cards, phase10Cards, phase5Cards, phase11Cards });
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
     } finally {
