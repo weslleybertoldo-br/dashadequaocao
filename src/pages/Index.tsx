@@ -209,6 +209,7 @@ const Index = () => {
                 phase9Cards={data.phase9Cards}
                 phase10Cards={data.phase10Cards}
                 phase5Cards={data.phase5Cards}
+                phase11Cards={data.phase11Cards}
               />
             )}
           </TabsContent>

@@ -103,6 +103,7 @@ export interface PipefyConfig {
   phase9: string;
   phase10: string;
   phase5: string;
+  phase11: string;
 }
 
 export async function loadConfigFromServer(): Promise<PipefyConfig> {
@@ -115,6 +116,7 @@ export async function loadConfigFromServer(): Promise<PipefyConfig> {
     phase9: localStorage.getItem("pipefy_phase9") || serverConfig.phase9 || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || serverConfig.phase10 || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || serverConfig.phase5 || "333848127",
+    phase11: localStorage.getItem("pipefy_phase11") || serverConfig.phase11 || "323044845",
   };
 }
 
@@ -124,6 +126,7 @@ export function loadConfig(): PipefyConfig {
     phase9: localStorage.getItem("pipefy_phase9") || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || "333848127",
+    phase11: localStorage.getItem("pipefy_phase11") || "323044845",
   };
 }
 
