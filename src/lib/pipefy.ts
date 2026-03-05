@@ -98,6 +98,66 @@ export function getDaysInPhase(card: PipefyCard): number {
   return Math.round((card.current_phase_age / 86400) * 10) / 10;
 }
 
+/** Lightweight: fetch only updated_at for all cards in a phase, count those matching today (BRT). */
+export async function fetchTodayCountForPhase(
+  token: string,
+  phaseId: string
+): Promise<number> {
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  let count = 0;
+  let hasNextPage = true;
+  let cursor: string | null = null;
+
+  while (hasNextPage) {
+    const afterClause = cursor ? `, after: "${cursor}"` : "";
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title updated_at } } } } }`;
+
+    const bodyPayload: any = { query };
+    if (token && token !== "__USE_SERVER_TOKEN__") {
+      bodyPayload.token = token;
+    }
+
+    let lastError: Error | null = null;
+    let responseData: any = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+      }
+      const { data, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
+        body: bodyPayload,
+      });
+      if (functionError) { lastError = new Error(functionError.message); continue; }
+      const json = data as any;
+      if (json?.error && /502|504|Bad gateway/i.test(JSON.stringify(json))) { lastError = new Error("Pipefy indisponível"); continue; }
+      if (!json?.data?.phase?.cards) { lastError = new Error("Resposta inválida"); continue; }
+      responseData = json;
+      lastError = null;
+      break;
+    }
+
+    if (lastError || !responseData) throw lastError || new Error("Falha após 3 tentativas");
+
+    const cardsData = responseData.data.phase.cards;
+    for (const edge of cardsData.edges) {
+      const updatedAt = edge.node.updated_at;
+      if (updatedAt) {
+        // updated_at comes as ISO string e.g. "2026-03-05T12:34:56-03:00"
+        const d = new Date(updatedAt);
+        const brt = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+        const dateStr = `${brt.getFullYear()}-${String(brt.getMonth() + 1).padStart(2, "0")}-${String(brt.getDate()).padStart(2, "0")}`;
+        if (dateStr === todayStr) count++;
+      }
+    }
+    hasNextPage = cardsData.pageInfo.hasNextPage;
+    cursor = cardsData.pageInfo.endCursor;
+  }
+
+  return count;
+}
+
 export interface PipefyConfig {
   token: string;
   phase9: string;

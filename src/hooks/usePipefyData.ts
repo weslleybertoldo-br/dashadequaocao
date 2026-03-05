@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, fetchAllCardsForPhase, loadConfigFromServer } from "@/lib/pipefy";
+import { PipefyCard, fetchAllCardsForPhase, fetchTodayCountForPhase, loadConfigFromServer } from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -11,14 +11,16 @@ export function usePipefyData() {
   const [data, setData] = useState<PipefyData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [phase11Cards, setPhase11Cards] = useState<PipefyCard[] | null>(null);
-  const [phase11Loading, setPhase11Loading] = useState(false);
+  const [entradasHoje, setEntradasHoje] = useState<number | null>(null);
+  const [concluidosHoje, setConcluidosHoje] = useState<number | null>(null);
+  const [todayLoading, setTodayLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setPhase11Cards(null);
-    setPhase11Loading(true);
+    setEntradasHoje(null);
+    setConcluidosHoje(null);
+    setTodayLoading(true);
 
     try {
       const config = await loadConfigFromServer();
@@ -33,21 +35,26 @@ export function usePipefyData() {
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // Fetch Phase 11 in background (slow - many cards)
+      // Fetch today counts in background (lightweight queries, no fields)
       try {
-        const cards = await fetchAllCardsForPhase(config.token, config.phase11);
-        setPhase11Cards(cards);
+        const [entradas, concluidos] = await Promise.all([
+          fetchTodayCountForPhase(config.token, config.phase9),
+          fetchTodayCountForPhase(config.token, config.phase11),
+        ]);
+        setEntradasHoje(entradas);
+        setConcluidosHoje(concluidos);
       } catch {
-        setPhase11Cards([]);
+        setEntradasHoje(0);
+        setConcluidosHoje(0);
       } finally {
-        setPhase11Loading(false);
+        setTodayLoading(false);
       }
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
       setLoading(false);
-      setPhase11Loading(false);
+      setTodayLoading(false);
     }
   }, []);
 
-  return { data, loading, error, fetchData, phase11Cards, phase11Loading };
+  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading };
 }

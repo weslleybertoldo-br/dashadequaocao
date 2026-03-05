@@ -12,8 +12,9 @@ interface OverviewPageProps {
   phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
-  phase11Cards: PipefyCard[] | null;
-  phase11Loading: boolean;
+  entradasHoje: number | null;
+  concluidosHoje: number | null;
+  todayLoading: boolean;
 }
 
 type SortDir = "asc" | "desc";
@@ -71,7 +72,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Cards, phase11Loading }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -91,23 +92,12 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Ca
     return Math.round((cards.reduce((s, c) => s + getDaysInPhase(c), 0) / cards.length) * 10) / 10;
   };
 
-  // Entradas Fase 9 Hoje: cards with current_phase_age < 86400
-  const entradasHoje = useMemo(() => {
-    return phase9Cards.filter((c) => c.current_phase_age < 86400).length;
-  }, [phase9Cards]);
-
-  // Concluídos Hoje: phase 11 cards where current_phase_age < 86400
-  const concluidosHoje = useMemo(() => {
-    if (!phase11Cards) return null;
-    return phase11Cards.filter((c) => c.current_phase_age < 86400).length;
-  }, [phase11Cards]);
-
   const stats = [
     { label: "Ativos não Finalizados", value: pipe1Cards.length },
     { label: "Total Fase 5", value: phase5Cards.length },
     { label: "Lead time - Não finalizados", value: avgDays(pipe1Cards) },
-    { label: "Entradas Fase 9 Hoje", value: entradasHoje },
-    { label: "Concluídos Hoje", value: phase11Loading ? "…" : (concluidosHoje ?? "—") },
+    { label: "Entradas Fase 9 Hoje", value: todayLoading ? "…" : (entradasHoje ?? "—") },
+    { label: "Concluídos Hoje", value: todayLoading ? "…" : (concluidosHoje ?? "—") },
   ];
 
   // Filtered & sorted pipe1
