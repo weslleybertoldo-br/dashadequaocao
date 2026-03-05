@@ -111,8 +111,10 @@ export async function fetchTodayCardsByPhaseHistory(
   token: string,
   phaseId: string
 ): Promise<TodayResult> {
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  // Get today's date in Brasília (UTC-3)
+  const nowUtc = new Date();
+  const nowBrt = new Date(nowUtc.getTime() - 3 * 60 * 60 * 1000);
+  const todayStr = `${nowBrt.getUTCFullYear()}-${String(nowBrt.getUTCMonth() + 1).padStart(2, "0")}-${String(nowBrt.getUTCDate()).padStart(2, "0")}`;
 
   const titles: string[] = [];
   let hasNextPage = true;
@@ -155,8 +157,8 @@ export async function fetchTodayCardsByPhaseHistory(
       const entry = history.find((h: any) => String(h.phase.id) === String(phaseId));
       if (entry?.firstTimeIn) {
         const d = new Date(entry.firstTimeIn);
-        const brt = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-        const dateStr = `${brt.getFullYear()}-${String(brt.getMonth() + 1).padStart(2, "0")}-${String(brt.getDate()).padStart(2, "0")}`;
+        const brt = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+        const dateStr = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}`;
         if (dateStr === todayStr) titles.push(edge.node.title);
       }
     }
