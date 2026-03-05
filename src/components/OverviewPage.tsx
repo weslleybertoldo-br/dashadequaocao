@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { PipefyCard, getField, getDaysInPhase } from "@/lib/pipefy";
+import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, Loader2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -12,8 +12,8 @@ interface OverviewPageProps {
   phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
-  entradasHoje: number | null;
-  concluidosHoje: number | null;
+  entradasHoje: TodayResult | null;
+  concluidosHoje: TodayResult | null;
   todayLoading: boolean;
 }
 
@@ -92,12 +92,10 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
     return Math.round((cards.reduce((s, c) => s + getDaysInPhase(c), 0) / cards.length) * 10) / 10;
   };
 
-  const stats = [
+  const simpleStats = [
     { label: "Ativos não Finalizados", value: pipe1Cards.length },
     { label: "Total Fase 5", value: phase5Cards.length },
     { label: "Lead time - Não finalizados", value: avgDays(pipe1Cards) },
-    { label: "Entradas Fase 9 Hoje", value: todayLoading ? "…" : (entradasHoje ?? "—") },
-    { label: "Concluídos Hoje", value: todayLoading ? "…" : (concluidosHoje ?? "—") },
   ];
 
   // Filtered & sorted pipe1
@@ -140,12 +138,50 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
     <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {stats.map((s) => (
+        {simpleStats.map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
             <p className="text-2xl font-mono font-bold text-foreground">{s.value}</p>
           </div>
         ))}
+
+        {/* Entradas Fase 9 Hoje */}
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-1">Entradas Fase 9 Hoje</p>
+          {todayLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+          ) : entradasHoje && entradasHoje.count > 0 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                {entradasHoje.titles.join("\n")}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <p className="text-2xl font-mono font-bold text-foreground">{entradasHoje?.count ?? "—"}</p>
+          )}
+        </div>
+
+        {/* Concluídos Hoje */}
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-1">Concluídos Hoje</p>
+          {todayLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+          ) : concluidosHoje && concluidosHoje.count > 0 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="text-2xl font-mono font-bold text-foreground cursor-default">{concluidosHoje.count}</p>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                {concluidosHoje.titles.join("\n")}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <p className="text-2xl font-mono font-bold text-foreground">{concluidosHoje?.count ?? "—"}</p>
+          )}
+        </div>
       </div>
 
       {/* Pipe 1 Table */}
