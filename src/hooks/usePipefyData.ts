@@ -33,23 +33,17 @@ export function usePipefyData() {
       ]);
 
       setData({ phase9Cards, phase10Cards, phase5Cards });
+      // "Ativos hoje" — instant from stage 1 data
+      setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards([...phase9Cards, ...phase10Cards], config.phase9));
       setLoading(false);
 
-      // STAGE 2: Background — fetch ALL phase 11 cards with phases_history
+      // STAGE 2: Background — fetch ALL phase 11 cards for "Finalizados hoje"
       fetchAllCardsForPhase(config.token, config.phase11, true)
         .then((phase11Cards) => {
-          const allCardsMap = new Map<string, PipefyCard>();
-          for (const card of [...phase9Cards, ...phase10Cards, ...phase11Cards]) {
-            allCardsMap.set(card.id, card);
-          }
-          const uniqueCards = Array.from(allCardsMap.values());
-          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase9));
-          setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase11));
+          setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(phase11Cards, config.phase11));
           setTodayLoading(false);
         })
         .catch(() => {
-          // Fallback: calculate entradas from stage 1 data only
-          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards([...phase9Cards, ...phase10Cards], config.phase9));
           setConcluidosHoje({ count: 0, titles: [] });
           setTodayLoading(false);
         });
