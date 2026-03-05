@@ -103,11 +103,13 @@ export interface TodayResult {
   titles: string[];
 }
 
-/** Fetch cards for a phase and return titles matching today's date (BRT) on a given date field. */
-export async function fetchTodayCardsForPhase(
+/**
+ * Fetch all cards in a phase, using phases_history to find cards
+ * whose firstTimeIn for the target phase matches today (America/Sao_Paulo).
+ */
+export async function fetchTodayCardsByPhaseHistory(
   token: string,
-  phaseId: string,
-  dateField: "started_current_phase_at" | "updated_at"
+  phaseId: string
 ): Promise<TodayResult> {
   const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -118,7 +120,7 @@ export async function fetchTodayCardsForPhase(
 
   while (hasNextPage) {
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title started_current_phase_at updated_at } } } } }`;
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title phases_history { phase { id } firstTimeIn } } } } } }`;
 
     const bodyPayload: any = { query };
     if (token && token !== "__USE_SERVER_TOKEN__") {
@@ -148,9 +150,11 @@ export async function fetchTodayCardsForPhase(
 
     const cardsData = responseData.data.phase.cards;
     for (const edge of cardsData.edges) {
-      const dateValue = edge.node[dateField];
-      if (dateValue) {
-        const d = new Date(dateValue);
+      const history = edge.node.phases_history as { phase: { id: string }; firstTimeIn: string }[] | undefined;
+      if (!history) continue;
+      const entry = history.find((h: any) => String(h.phase.id) === String(phaseId));
+      if (entry?.firstTimeIn) {
+        const d = new Date(entry.firstTimeIn);
         const brt = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
         const dateStr = `${brt.getFullYear()}-${String(brt.getMonth() + 1).padStart(2, "0")}-${String(brt.getDate()).padStart(2, "0")}`;
         if (dateStr === todayStr) titles.push(edge.node.title);
