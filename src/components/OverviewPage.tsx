@@ -12,7 +12,8 @@ interface OverviewPageProps {
   phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
-  phase11Cards: PipefyCard[];
+  phase11Cards: PipefyCard[] | null;
+  phase11Loading: boolean;
 }
 
 type SortDir = "asc" | "desc";
@@ -70,7 +71,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Cards }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Cards, phase11Loading }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -97,6 +98,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Ca
 
   // Concluídos Hoje: phase 11 cards where current_phase_age < 86400
   const concluidosHoje = useMemo(() => {
+    if (!phase11Cards) return null;
     return phase11Cards.filter((c) => c.current_phase_age < 86400).length;
   }, [phase11Cards]);
 
@@ -105,7 +107,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, phase11Ca
     { label: "Total Fase 5", value: phase5Cards.length },
     { label: "Lead time - Não finalizados", value: avgDays(pipe1Cards) },
     { label: "Entradas Fase 9 Hoje", value: entradasHoje },
-    { label: "Concluídos Hoje", value: concluidosHoje },
+    { label: "Concluídos Hoje", value: phase11Loading ? "…" : (concluidosHoje ?? "—") },
   ];
 
   // Filtered & sorted pipe1

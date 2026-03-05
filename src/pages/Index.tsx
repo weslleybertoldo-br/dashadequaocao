@@ -31,7 +31,7 @@ function formatTime(date: Date | null) {
 }
 
 const Index = () => {
-  const { data, loading, error, fetchData } = usePipefyData();
+  const { data, loading, error, fetchData, phase11Cards, phase11Loading } = usePipefyData();
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
@@ -209,7 +209,8 @@ const Index = () => {
                 phase9Cards={data.phase9Cards}
                 phase10Cards={data.phase10Cards}
                 phase5Cards={data.phase5Cards}
-                phase11Cards={data.phase11Cards}
+                phase11Cards={phase11Cards}
+                phase11Loading={phase11Loading}
               />
             )}
           </TabsContent>
