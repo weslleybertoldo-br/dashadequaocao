@@ -33,17 +33,23 @@ export function usePipefyData() {
       ]);
 
       setData({ phase9Cards, phase10Cards, phase5Cards });
-      // "Ativos hoje" — instant from stage 1 data
-      setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards([...phase9Cards, ...phase10Cards], config.phase9));
       setLoading(false);
 
-      // STAGE 2: Background — fetch ALL phase 11 cards for "Finalizados hoje"
+      // STAGE 2: Background — fetch ALL phase 11 cards
       fetchAllCardsForPhase(config.token, config.phase11, true)
         .then((phase11Cards) => {
+          // Merge phases 9+10+11, deduplicate by id
+          const allCardsMap = new Map<string, PipefyCard>();
+          for (const card of [...phase9Cards, ...phase10Cards, ...phase11Cards]) {
+            allCardsMap.set(card.id, card);
+          }
+          const uniqueCards = Array.from(allCardsMap.values());
+          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase9));
           setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(phase11Cards, config.phase11));
           setTodayLoading(false);
         })
         .catch(() => {
+          setEntradasHoje({ count: 0, titles: [] });
           setConcluidosHoje({ count: 0, titles: [] });
           setTodayLoading(false);
         });

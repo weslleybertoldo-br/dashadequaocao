@@ -145,10 +145,12 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           </div>
         ))}
 
-        {/* Ativos hoje — instant, no spinner */}
+        {/* Ativos hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Ativos hoje</p>
-          {entradasHoje && entradasHoje.count > 0 ? (
+          {todayLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+          ) : entradasHoje && entradasHoje.count > 0 ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
