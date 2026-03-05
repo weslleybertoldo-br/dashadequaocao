@@ -34,13 +34,16 @@ interface PhaseResponse {
 export async function fetchAllCardsForPhase(
   token: string,
   phaseId: string,
-  includePhasesHistory = false
+  includePhasesHistory = false,
+  maxPages = Infinity
 ): Promise<PipefyCard[]> {
   const allCards: PipefyCard[] = [];
   let hasNextPage = true;
   let cursor: string | null = null;
+  let page = 0;
 
-  while (hasNextPage) {
+  while (hasNextPage && page < maxPages) {
+    page++;
     const afterClause = cursor ? `, after: "${cursor}"` : "";
     const phaseHistoryField = includePhasesHistory ? "phases_history { phase { id } firstTimeIn }" : "";
     const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } ${phaseHistoryField} } } } } }`;

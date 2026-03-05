@@ -25,35 +25,34 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
-      // PHASE 1: Fast load — tables and main stats (NO phases_history)
+      // STAGE 1: Fast load — tables (phases 9/10 WITH phases_history for reuse)
       const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase9),
-        fetchAllCardsForPhase(config.token, config.phase10),
+        fetchAllCardsForPhase(config.token, config.phase9, true),
+        fetchAllCardsForPhase(config.token, config.phase10, true),
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // PHASE 2: Background — fetch 9, 10, 11 WITH phases_history for today metrics
-      Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase9, true),
-        fetchAllCardsForPhase(config.token, config.phase10, true),
-        fetchAllCardsForPhase(config.token, config.phase11, true),
-      ]).then(([p9, p10, p11]) => {
-        const allCardsMap = new Map<string, PipefyCard>();
-        for (const card of [...p9, ...p10, ...p11]) {
-          allCardsMap.set(card.id, card);
-        }
-        const uniqueCards = Array.from(allCardsMap.values());
-        setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase9));
-        setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase11));
-        setTodayLoading(false);
-      }).catch(() => {
-        setEntradasHoje({ count: 0, titles: [] });
-        setConcluidosHoje({ count: 0, titles: [] });
-        setTodayLoading(false);
-      });
+      // STAGE 2: Background — fetch phase 11 (capped at 500 cards / 10 pages) for "Concluídos Hoje"
+      fetchAllCardsForPhase(config.token, config.phase11, true, 10)
+        .then((phase11Cards) => {
+          const allCardsMap = new Map<string, PipefyCard>();
+          for (const card of [...phase9Cards, ...phase10Cards, ...phase11Cards]) {
+            allCardsMap.set(card.id, card);
+          }
+          const uniqueCards = Array.from(allCardsMap.values());
+          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase9));
+          setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase11));
+          setTodayLoading(false);
+        })
+        .catch(() => {
+          // Fallback: calculate entradas from stage 1 data only
+          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards([...phase9Cards, ...phase10Cards], config.phase9));
+          setConcluidosHoje({ count: 0, titles: [] });
+          setTodayLoading(false);
+        });
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
       setLoading(false);
