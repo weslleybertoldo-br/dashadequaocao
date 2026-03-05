@@ -1,11 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface PipefyPhaseHistoryEntry {
+  phase: { id: string };
+  firstTimeIn: string;
+}
+
 export interface PipefyCard {
   id: string;
   title: string;
   current_phase: { name: string };
   current_phase_age: number;
   fields: { name: string; value: string }[];
+  phases_history?: PipefyPhaseHistoryEntry[];
 }
 
 interface PageInfo {
@@ -27,7 +33,8 @@ interface PhaseResponse {
 
 export async function fetchAllCardsForPhase(
   token: string,
-  phaseId: string
+  phaseId: string,
+  includePhasesHistory = false
 ): Promise<PipefyCard[]> {
   const allCards: PipefyCard[] = [];
   let hasNextPage = true;
@@ -35,7 +42,8 @@ export async function fetchAllCardsForPhase(
 
   while (hasNextPage) {
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } } } } } }`;
+    const phaseHistoryField = includePhasesHistory ? "phases_history { phase { id } firstTimeIn }" : "";
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value } ${phaseHistoryField} } } } } }`;
 
     let lastError: Error | null = null;
     let responseData: any = null;
@@ -103,6 +111,28 @@ export interface TodayResult {
   titles: string[];
 }
 
+function getBrasiliaDateKey(date: Date): string {
+  const brt = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+  return `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}`;
+}
+
+export function getTodayCardsByPhaseHistoryFromLoadedCards(
+  cards: PipefyCard[],
+  phaseId: string
+): TodayResult {
+  const todayStr = getBrasiliaDateKey(new Date());
+  const titles: string[] = [];
+
+  for (const card of cards) {
+    const entry = card.phases_history?.find((h) => String(h.phase.id) === String(phaseId));
+    if (!entry?.firstTimeIn) continue;
+    const dateStr = getBrasiliaDateKey(new Date(entry.firstTimeIn));
+    if (dateStr === todayStr) titles.push(card.title);
+  }
+
+  return { count: titles.length, titles };
+}
+
 /**
  * Fetch all cards in a phase, using phases_history to find cards
  * whose firstTimeIn for the target phase matches today (America/Sao_Paulo).
@@ -111,10 +141,7 @@ export async function fetchTodayCardsByPhaseHistory(
   token: string,
   phaseId: string
 ): Promise<TodayResult> {
-  // Get today's date in Brasília (UTC-3)
-  const nowUtc = new Date();
-  const nowBrt = new Date(nowUtc.getTime() - 3 * 60 * 60 * 1000);
-  const todayStr = `${nowBrt.getUTCFullYear()}-${String(nowBrt.getUTCMonth() + 1).padStart(2, "0")}-${String(nowBrt.getUTCDate()).padStart(2, "0")}`;
+  const todayStr = getBrasiliaDateKey(new Date());
 
   const titles: string[] = [];
   let hasNextPage = true;
@@ -152,13 +179,11 @@ export async function fetchTodayCardsByPhaseHistory(
 
     const cardsData = responseData.data.phase.cards;
     for (const edge of cardsData.edges) {
-      const history = edge.node.phases_history as { phase: { id: string }; firstTimeIn: string }[] | undefined;
+      const history = edge.node.phases_history as PipefyPhaseHistoryEntry[] | undefined;
       if (!history) continue;
-      const entry = history.find((h: any) => String(h.phase.id) === String(phaseId));
+      const entry = history.find((h) => String(h.phase.id) === String(phaseId));
       if (entry?.firstTimeIn) {
-        const d = new Date(entry.firstTimeIn);
-        const brt = new Date(d.getTime() - 3 * 60 * 60 * 1000);
-        const dateStr = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}`;
+        const dateStr = getBrasiliaDateKey(new Date(entry.firstTimeIn));
         if (dateStr === todayStr) titles.push(edge.node.title);
       }
     }

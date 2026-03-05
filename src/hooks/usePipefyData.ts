@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, TodayResult, fetchAllCardsForPhase, fetchTodayCardsByPhaseHistory, loadConfigFromServer } from "@/lib/pipefy";
+import { PipefyCard, TodayResult, fetchAllCardsForPhase, fetchTodayCardsByPhaseHistory, getTodayCardsByPhaseHistoryFromLoadedCards, loadConfigFromServer } from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -27,31 +27,34 @@ export function usePipefyData() {
 
       // Start ALL fetches in parallel
       const mainPromise = Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase9),
-        fetchAllCardsForPhase(config.token, config.phase10),
+        fetchAllCardsForPhase(config.token, config.phase9, true),
+        fetchAllCardsForPhase(config.token, config.phase10, true),
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
-      const todayPromise = Promise.all([
-        fetchTodayCardsByPhaseHistory(config.token, config.phase9).catch(() => ({ count: 0, titles: [] } as TodayResult)),
-        fetchTodayCardsByPhaseHistory(config.token, config.phase11).catch(() => ({ count: 0, titles: [] } as TodayResult)),
-      ]);
+      const concluidosPromise = fetchTodayCardsByPhaseHistory(config.token, config.phase11)
+        .catch(() => ({ count: 0, titles: [] } as TodayResult));
 
-      // Resolve main data as soon as ready (don't wait for today counts)
+      // Resolve main data as soon as ready (don't wait for concluídos)
       mainPromise.then(([phase9Cards, phase10Cards, phase5Cards]) => {
         setData({ phase9Cards, phase10Cards, phase5Cards });
+        setEntradasHoje(
+          getTodayCardsByPhaseHistoryFromLoadedCards(
+            [...phase9Cards, ...phase10Cards],
+            config.phase9
+          )
+        );
         setLoading(false);
       });
 
-      // Resolve today counts independently
-      todayPromise.then(([entradas, concluidos]) => {
-        setEntradasHoje(entradas);
+      // Resolve concluídos independently
+      concluidosPromise.then((concluidos) => {
         setConcluidosHoje(concluidos);
         setTodayLoading(false);
       });
 
       // Wait for both to settle (for error handling)
-      await Promise.all([mainPromise, todayPromise]);
+      await Promise.all([mainPromise, concluidosPromise]);
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
       setLoading(false);
