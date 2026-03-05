@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, Loader2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +14,7 @@ interface OverviewPageProps {
   phase5Cards: PipefyCard[];
   entradasHoje: TodayResult | null;
   concluidosHoje: TodayResult | null;
+  todayLoading: boolean;
 }
 
 type SortDir = "asc" | "desc";
@@ -71,7 +72,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -147,7 +148,9 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
         {/* Entradas Fase 9 Hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Entradas Fase 9 Hoje</p>
-          {entradasHoje && entradasHoje.count > 0 ? (
+          {todayLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+          ) : entradasHoje && entradasHoje.count > 0 ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
@@ -164,7 +167,9 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
         {/* Concluídos Hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Concluídos Hoje</p>
-          {concluidosHoje && concluidosHoje.count > 0 ? (
+          {todayLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+          ) : concluidosHoje && concluidosHoje.count > 0 ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className="text-2xl font-mono font-bold text-foreground cursor-default">{concluidosHoje.count}</p>
