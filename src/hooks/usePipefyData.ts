@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, TodayResult, fetchAllCardsForPhase, fetchTodayCardsForPhase, loadConfigFromServer } from "@/lib/pipefy";
+import { PipefyCard, TodayResult, fetchAllCardsForPhase, fetchTodayCardsByPhaseHistory, loadConfigFromServer } from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -33,8 +33,8 @@ export function usePipefyData() {
       ]);
 
       const todayPromise = Promise.all([
-        fetchTodayCardsForPhase(config.token, config.phase9, "started_current_phase_at").catch(() => ({ count: 0, titles: [] } as TodayResult)),
-        fetchTodayCardsForPhase(config.token, config.phase11, "updated_at").catch(() => ({ count: 0, titles: [] } as TodayResult)),
+        fetchTodayCardsByPhaseHistory(config.token, config.phase9).catch(() => ({ count: 0, titles: [] } as TodayResult)),
+        fetchTodayCardsByPhaseHistory(config.token, config.phase11).catch(() => ({ count: 0, titles: [] } as TodayResult)),
       ]);
 
       // Resolve main data as soon as ready (don't wait for today counts)
