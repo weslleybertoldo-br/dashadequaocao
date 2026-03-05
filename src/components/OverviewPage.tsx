@@ -145,9 +145,9 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           </div>
         ))}
 
-        {/* Entradas Fase 9 Hoje */}
+        {/* Ativos hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Entradas Fase 9 Hoje</p>
+          <p className="text-xs text-muted-foreground mb-1">Ativos hoje</p>
           {todayLoading ? (
             <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
           ) : entradasHoje && entradasHoje.count > 0 ? (
@@ -164,9 +164,9 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           )}
         </div>
 
-        {/* Concluídos Hoje */}
+        {/* Finalizados hoje */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Concluídos Hoje</p>
+          <p className="text-xs text-muted-foreground mb-1">Finalizados hoje</p>
           {todayLoading ? (
             <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
           ) : concluidosHoje && concluidosHoje.count > 0 ? (

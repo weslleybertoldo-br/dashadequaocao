@@ -36,7 +36,7 @@ export function usePipefyData() {
       setLoading(false);
 
       // STAGE 2: Background — fetch phase 11 (capped at 500 cards / 10 pages) for "Concluídos Hoje"
-      fetchAllCardsForPhase(config.token, config.phase11, true, 10)
+      fetchAllCardsForPhase(config.token, config.phase11, true)
         .then((phase11Cards) => {
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...phase9Cards, ...phase10Cards, ...phase11Cards]) {
