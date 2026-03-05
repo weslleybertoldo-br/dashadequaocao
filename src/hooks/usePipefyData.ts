@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, fetchAllCardsForPhase, fetchTodayCountForPhase, loadConfigFromServer } from "@/lib/pipefy";
+import { PipefyCard, TodayResult, fetchAllCardsForPhase, fetchTodayCardsForPhase, loadConfigFromServer } from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -11,8 +11,8 @@ export function usePipefyData() {
   const [data, setData] = useState<PipefyData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [entradasHoje, setEntradasHoje] = useState<number | null>(null);
-  const [concluidosHoje, setConcluidosHoje] = useState<number | null>(null);
+  const [entradasHoje, setEntradasHoje] = useState<TodayResult | null>(null);
+  const [concluidosHoje, setConcluidosHoje] = useState<TodayResult | null>(null);
   const [todayLoading, setTodayLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -25,30 +25,33 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
-      // Fetch main phases first (fast)
-      const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
+      // Start ALL fetches in parallel
+      const mainPromise = Promise.all([
         fetchAllCardsForPhase(config.token, config.phase9),
         fetchAllCardsForPhase(config.token, config.phase10),
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
-      setData({ phase9Cards, phase10Cards, phase5Cards });
-      setLoading(false);
+      const todayPromise = Promise.all([
+        fetchTodayCardsForPhase(config.token, config.phase9, "started_current_phase_at").catch(() => ({ count: 0, titles: [] } as TodayResult)),
+        fetchTodayCardsForPhase(config.token, config.phase11, "updated_at").catch(() => ({ count: 0, titles: [] } as TodayResult)),
+      ]);
 
-      // Fetch today counts in background (lightweight queries, no fields)
-      try {
-        const [entradas, concluidos] = await Promise.all([
-          fetchTodayCountForPhase(config.token, config.phase9),
-          fetchTodayCountForPhase(config.token, config.phase11),
-        ]);
+      // Resolve main data as soon as ready (don't wait for today counts)
+      mainPromise.then(([phase9Cards, phase10Cards, phase5Cards]) => {
+        setData({ phase9Cards, phase10Cards, phase5Cards });
+        setLoading(false);
+      });
+
+      // Resolve today counts independently
+      todayPromise.then(([entradas, concluidos]) => {
         setEntradasHoje(entradas);
         setConcluidosHoje(concluidos);
-      } catch {
-        setEntradasHoje(0);
-        setConcluidosHoje(0);
-      } finally {
         setTodayLoading(false);
-      }
+      });
+
+      // Wait for both to settle (for error handling)
+      await Promise.all([mainPromise, todayPromise]);
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
       setLoading(false);

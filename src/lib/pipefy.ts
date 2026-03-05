@@ -98,21 +98,27 @@ export function getDaysInPhase(card: PipefyCard): number {
   return Math.round((card.current_phase_age / 86400) * 10) / 10;
 }
 
-/** Lightweight: fetch only updated_at for all cards in a phase, count those matching today (BRT). */
-export async function fetchTodayCountForPhase(
+export interface TodayResult {
+  count: number;
+  titles: string[];
+}
+
+/** Fetch cards for a phase and return titles matching today's date (BRT) on a given date field. */
+export async function fetchTodayCardsForPhase(
   token: string,
-  phaseId: string
-): Promise<number> {
+  phaseId: string,
+  dateField: "started_current_phase_at" | "updated_at"
+): Promise<TodayResult> {
   const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  let count = 0;
+  const titles: string[] = [];
   let hasNextPage = true;
   let cursor: string | null = null;
 
   while (hasNextPage) {
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title updated_at } } } } }`;
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title started_current_phase_at updated_at } } } } }`;
 
     const bodyPayload: any = { query };
     if (token && token !== "__USE_SERVER_TOKEN__") {
@@ -142,20 +148,19 @@ export async function fetchTodayCountForPhase(
 
     const cardsData = responseData.data.phase.cards;
     for (const edge of cardsData.edges) {
-      const updatedAt = edge.node.updated_at;
-      if (updatedAt) {
-        // updated_at comes as ISO string e.g. "2026-03-05T12:34:56-03:00"
-        const d = new Date(updatedAt);
+      const dateValue = edge.node[dateField];
+      if (dateValue) {
+        const d = new Date(dateValue);
         const brt = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
         const dateStr = `${brt.getFullYear()}-${String(brt.getMonth() + 1).padStart(2, "0")}-${String(brt.getDate()).padStart(2, "0")}`;
-        if (dateStr === todayStr) count++;
+        if (dateStr === todayStr) titles.push(edge.node.title);
       }
     }
     hasNextPage = cardsData.pageInfo.hasNextPage;
     cursor = cardsData.pageInfo.endCursor;
   }
 
-  return count;
+  return { count: titles.length, titles };
 }
 
 export interface PipefyConfig {
