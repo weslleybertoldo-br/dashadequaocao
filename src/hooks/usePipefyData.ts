@@ -1,5 +1,12 @@
 import { useState, useCallback } from "react";
-import { PipefyCard, TodayResult, fetchAllCardsForPhase, getTodayCardsByPhaseHistoryFromLoadedCards, loadConfigFromServer } from "@/lib/pipefy";
+import {
+  PipefyCard,
+  TodayResult,
+  fetchAllCardsForPhase,
+  countAtivosHoje,
+  countFinalizadosHoje,
+  loadConfigFromServer,
+} from "@/lib/pipefy";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -25,32 +32,47 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
-      // STAGE 1: Fast load — tables (phases 9/10 WITH phases_history for reuse)
-      const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase9, true),
-        fetchAllCardsForPhase(config.token, config.phase10, true),
+      // ── STAGE 1 (fast): phases 8, 9, 10, 5 in parallel (no phases_history) ──
+      const [phase8Cards, phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
+        fetchAllCardsForPhase(config.token, config.phase8),
+        fetchAllCardsForPhase(config.token, config.phase9),
+        fetchAllCardsForPhase(config.token, config.phase10),
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
+      // Show tables immediately
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // STAGE 2: Background — fetch ALL phase 11 cards
-      fetchAllCardsForPhase(config.token, config.phase11, true)
+      // Partial "Ativos hoje" from phases 8+9+10
+      const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
+      setEntradasHoje(countAtivosHoje(stage1Cards));
+
+      // Partial "Finalizados hoje" from phase 10
+      setConcluidosHoje(countFinalizadosHoje(phase10Cards));
+
+      // ── STAGE 2 (background): phase 11 full pagination ──
+      fetchAllCardsForPhase(config.token, config.phase11)
         .then((phase11Cards) => {
-          // Merge phases 9+10+11, deduplicate by id
+          // Recalc "Ativos hoje": phases 8+9+10+11 deduplicated
           const allCardsMap = new Map<string, PipefyCard>();
-          for (const card of [...phase9Cards, ...phase10Cards, ...phase11Cards]) {
+          for (const card of [...stage1Cards, ...phase11Cards]) {
             allCardsMap.set(card.id, card);
           }
           const uniqueCards = Array.from(allCardsMap.values());
-          setEntradasHoje(getTodayCardsByPhaseHistoryFromLoadedCards(uniqueCards, config.phase9));
-          setConcluidosHoje(getTodayCardsByPhaseHistoryFromLoadedCards(phase11Cards, config.phase11));
+          setEntradasHoje(countAtivosHoje(uniqueCards));
+
+          // Recalc "Finalizados hoje": phases 10+11 deduplicated
+          const finalizadosMap = new Map<string, PipefyCard>();
+          for (const card of [...phase10Cards, ...phase11Cards]) {
+            finalizadosMap.set(card.id, card);
+          }
+          setConcluidosHoje(countFinalizadosHoje(Array.from(finalizadosMap.values())));
+
           setTodayLoading(false);
         })
         .catch(() => {
-          setEntradasHoje({ count: 0, titles: [] });
-          setConcluidosHoje({ count: 0, titles: [] });
+          // Keep stage 1 values, just stop loading
           setTodayLoading(false);
         });
     } catch (err: any) {
