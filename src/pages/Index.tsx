@@ -212,6 +212,8 @@ const Index = () => {
                 entradasHoje={entradasHoje}
                 concluidosHoje={concluidosHoje}
                 todayLoading={todayLoading}
+                stage2Loading={stage2Loading}
+                stage2Duration={stage2Duration}
               />
             )}
           </TabsContent>
