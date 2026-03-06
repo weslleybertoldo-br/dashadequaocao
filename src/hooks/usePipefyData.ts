@@ -44,36 +44,35 @@ export function usePipefyData() {
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // Partial "Ativos hoje" from phases 8+9+10
+      // "Ativos hoje" from phases 8+9+10
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
       setEntradasHoje(countAtivosHoje(stage1Cards));
 
-      // Partial "Finalizados hoje" from phase 10
+      // "Finalizados hoje" from phase 10
       setConcluidosHoje(countFinalizadosHoje(phase10Cards));
 
-      // ── STAGE 2 (background): phase 11 full pagination ──
+      // Spinner stops here — dashboard is fully usable
+      setTodayLoading(false);
+
+      // ── STAGE 2 (background, silent): phase 11 full pagination ──
       fetchAllCardsForPhase(config.token, config.phase11)
         .then((phase11Cards) => {
-          // Recalc "Ativos hoje": phases 8+9+10+11 deduplicated
+          // Recalc "Ativos hoje": 8+9+10+11 deduplicated
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...phase11Cards]) {
             allCardsMap.set(card.id, card);
           }
-          const uniqueCards = Array.from(allCardsMap.values());
-          setEntradasHoje(countAtivosHoje(uniqueCards));
+          setEntradasHoje(countAtivosHoje(Array.from(allCardsMap.values())));
 
-          // Recalc "Finalizados hoje": phases 10+11 deduplicated
+          // Recalc "Finalizados hoje": 10+11 deduplicated
           const finalizadosMap = new Map<string, PipefyCard>();
           for (const card of [...phase10Cards, ...phase11Cards]) {
             finalizadosMap.set(card.id, card);
           }
           setConcluidosHoje(countFinalizadosHoje(Array.from(finalizadosMap.values())));
-
-          setTodayLoading(false);
         })
         .catch(() => {
-          // Keep stage 1 values, just stop loading
-          setTodayLoading(false);
+          // Keep stage 1 values silently
         });
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
