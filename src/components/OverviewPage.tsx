@@ -15,7 +15,10 @@ interface OverviewPageProps {
   entradasHoje: TodayResult | null;
   concluidosHoje: TodayResult | null;
   todayLoading: boolean;
+  stage2Loading: boolean;
+  stage2Duration: number | null;
 }
+
 
 type SortDir = "asc" | "desc";
 interface SortState {
