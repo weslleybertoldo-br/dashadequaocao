@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, Loader2 } from "lucide-react";
+import { Search, ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -15,7 +15,10 @@ interface OverviewPageProps {
   entradasHoje: TodayResult | null;
   concluidosHoje: TodayResult | null;
   todayLoading: boolean;
+  stage2Loading: boolean;
+  stage2Duration: number | null;
 }
+
 
 type SortDir = "asc" | "desc";
 interface SortState {
@@ -72,7 +75,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -145,42 +148,67 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           </div>
         ))}
 
-        {/* Ativos hoje */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Ativos hoje</p>
-          {todayLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
-          ) : entradasHoje && entradasHoje.count > 0 ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
-                {entradasHoje.titles.join("\n")}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <p className="text-2xl font-mono font-bold text-foreground">{entradasHoje?.count ?? "—"}</p>
-          )}
-        </div>
+        {/* Ativos hoje + Finalizados hoje wrapper */}
+        <div className="col-span-2 space-y-1.5">
+          {/* Duration label or loading indicator */}
+          <div className="h-4 flex items-center gap-1.5">
+            {stage2Loading ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">Atualizando dados completos…</span>
+              </>
+            ) : stage2Duration !== null ? (
+              <span className="text-[11px] text-muted-foreground">
+                Atualizado em {stage2Duration >= 60 ? `${Math.floor(stage2Duration / 60)}m ${stage2Duration % 60}s` : `${stage2Duration}s`}
+              </span>
+            ) : null}
+          </div>
 
-        {/* Finalizados hoje */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Finalizados hoje</p>
-          {todayLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
-          ) : concluidosHoje && concluidosHoje.count > 0 ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p className="text-2xl font-mono font-bold text-foreground cursor-default">{concluidosHoje.count}</p>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
-                {concluidosHoje.titles.join("\n")}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <p className="text-2xl font-mono font-bold text-foreground">{concluidosHoje?.count ?? "—"}</p>
-          )}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Ativos hoje */}
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="text-xs text-muted-foreground">Ativos hoje</p>
+                {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
+              </div>
+              {todayLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+              ) : entradasHoje && entradasHoje.count > 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-2xl font-mono font-bold text-foreground cursor-default">{entradasHoje.count}</p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                    {entradasHoje.titles.join("\n")}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <p className="text-2xl font-mono font-bold text-foreground">{entradasHoje?.count ?? "—"}</p>
+              )}
+            </div>
+
+            {/* Finalizados hoje */}
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="text-xs text-muted-foreground">Finalizados hoje</p>
+                {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
+              </div>
+              {todayLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+              ) : concluidosHoje && concluidosHoje.count > 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-2xl font-mono font-bold text-foreground cursor-default">{concluidosHoje.count}</p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                    {concluidosHoje.titles.join("\n")}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <p className="text-2xl font-mono font-bold text-foreground">{concluidosHoje?.count ?? "—"}</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -21,6 +21,8 @@ export function usePipefyData() {
   const [entradasHoje, setEntradasHoje] = useState<TodayResult | null>(null);
   const [concluidosHoje, setConcluidosHoje] = useState<TodayResult | null>(null);
   const [todayLoading, setTodayLoading] = useState(false);
+  const [stage2Loading, setStage2Loading] = useState(false);
+  const [stage2Duration, setStage2Duration] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -28,11 +30,13 @@ export function usePipefyData() {
     setEntradasHoje(null);
     setConcluidosHoje(null);
     setTodayLoading(true);
+    setStage2Loading(false);
+    setStage2Duration(null);
 
     try {
       const config = await loadConfigFromServer();
 
-      // ── STAGE 1 (fast): phases 8, 9, 10, 5 in parallel (no phases_history) ──
+      // ── STAGE 1 (fast): phases 8, 9, 10, 5 in parallel ──
       const [phase8Cards, phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase8),
         fetchAllCardsForPhase(config.token, config.phase9),
@@ -40,39 +44,37 @@ export function usePipefyData() {
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
-      // Show tables immediately
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // "Ativos hoje" from phases 8+9+10
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
       setEntradasHoje(countAtivosHoje(stage1Cards));
-
-      // "Finalizados hoje" from phase 10
       setConcluidosHoje(countFinalizadosHoje(phase10Cards));
-
-      // Spinner stops here — dashboard is fully usable
       setTodayLoading(false);
 
-      // ── STAGE 2 (background, silent): phase 11 full pagination ──
+      // ── STAGE 2 (background): phase 11 full pagination ──
+      setStage2Loading(true);
+      const stage2Start = Date.now();
+
       fetchAllCardsForPhase(config.token, config.phase11)
         .then((phase11Cards) => {
-          // Recalc "Ativos hoje": 8+9+10+11 deduplicated
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...phase11Cards]) {
             allCardsMap.set(card.id, card);
           }
           setEntradasHoje(countAtivosHoje(Array.from(allCardsMap.values())));
 
-          // Recalc "Finalizados hoje": 10+11 deduplicated
           const finalizadosMap = new Map<string, PipefyCard>();
           for (const card of [...phase10Cards, ...phase11Cards]) {
             finalizadosMap.set(card.id, card);
           }
           setConcluidosHoje(countFinalizadosHoje(Array.from(finalizadosMap.values())));
+
+          setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
+          setStage2Loading(false);
         })
         .catch(() => {
-          // Keep stage 1 values silently
+          setStage2Loading(false);
         });
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
@@ -81,5 +83,5 @@ export function usePipefyData() {
     }
   }, []);
 
-  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading };
+  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration };
 }
