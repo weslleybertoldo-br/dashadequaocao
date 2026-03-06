@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, Loader2 } from "lucide-react";
+import { Search, ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
