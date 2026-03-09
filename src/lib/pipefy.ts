@@ -277,7 +277,6 @@ export function loadConfig(): PipefyConfig {
 
 export function saveConfig(config: PipefyConfig) {
   localStorage.setItem("pipefy_token", config.token);
-  localStorage.setItem("pipefy_phase8", config.phase8);
   localStorage.setItem("pipefy_phase9", config.phase9);
   localStorage.setItem("pipefy_phase10", config.phase10);
   localStorage.setItem("pipefy_phase5", config.phase5);
