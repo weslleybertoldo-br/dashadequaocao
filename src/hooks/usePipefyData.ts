@@ -29,6 +29,7 @@ export function usePipefyData() {
   const [todayLoading, setTodayLoading] = useState(false);
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
+  const [snapshotStatus, setSnapshotStatus] = useState<{ success: boolean; savedAt?: string; error?: string } | null>(null);
 
   // Track whether snapshots have been loaded — Pipefy fetch waits for this
   const snapshotLoadedRef = useRef(false);
