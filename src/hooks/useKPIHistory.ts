@@ -208,6 +208,7 @@ export function useKPIHistory() {
         salvarDia(dataISO, "finalizados", contagemFinalizados[dataISO] ?? 0);
       });
 
+      setKpiDuration(Math.round((Date.now() - startTime) / 1000));
       setProgresso(null);
       setRefreshTrigger((p) => p + 1);
     } catch (err: any) {
