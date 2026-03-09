@@ -5,6 +5,7 @@ import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
+import { KPIsPage } from "@/components/KPIsPage";
 import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -189,6 +190,9 @@ const Index = () => {
             <TabsTrigger value="hosts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Por Anfitrião
             </TabsTrigger>
+            <TabsTrigger value="kpis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              KPI's
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -234,6 +238,10 @@ const Index = () => {
             {data && !loading && (
               <HostPage phase9Cards={data.phase9Cards} phase10Cards={data.phase10Cards} />
             )}
+          </TabsContent>
+
+          <TabsContent value="kpis">
+            <KPIsPage entradasHoje={entradasHoje} concluidosHoje={concluidosHoje} />
           </TabsContent>
 
           {hiddenUnlocked && (
