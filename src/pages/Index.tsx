@@ -5,6 +5,7 @@ import { loadConfig } from "@/lib/pipefy";
 import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
+import { KPIsPage } from "@/components/KPIsPage";
 import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
