@@ -254,15 +254,11 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   // Load month data and last update timestamp from Supabase
   useEffect(() => {
     setLoadingMes(true);
-    Promise.all([
-      lerMesSupabase(ano, mes),
-      lerUltimaAtualizacao(),
-    ]).then(([mapa, ts]) => {
+    lerMesSupabase(ano, mes).then((mapa) => {
       setDadosMes(mapa);
-      setUltimaAtualizacao(ts);
       setLoadingMes(false);
     });
-  }, [ano, mes, refreshTrigger]);
+  }, [ano, mes]);
 
   // Reflect live dashboard values independently — each updates as soon as available
   useEffect(() => {
