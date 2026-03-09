@@ -106,5 +106,9 @@ export function usePipefyData() {
     }
   }, [persistSnapshot]);
 
-  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotLoaded, snapshotDebug };
+  // Effective values: Pipefy data wins, otherwise snapshot
+  const effectiveEntradas = entradasHoje ?? snapshotEntradas;
+  const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
+
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration };
 }
