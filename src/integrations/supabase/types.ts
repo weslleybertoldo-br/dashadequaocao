@@ -59,6 +59,27 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_snapshot_hoje: {
+        Row: {
+          chave: string
+          imoveis: Json
+          salvo_em: string | null
+          valor: number
+        }
+        Insert: {
+          chave: string
+          imoveis?: Json
+          salvo_em?: string | null
+          valor?: number
+        }
+        Update: {
+          chave?: string
+          imoveis?: Json
+          salvo_em?: string | null
+          valor?: number
+        }
+        Relationships: []
+      }
       pipe2_excecoes: {
         Row: {
           atualizado_em: string | null
