@@ -54,6 +54,12 @@ function toDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function getFaltamColor(faltam: number) {
+  if (faltam === 0) return "text-success";
+  if (faltam <= 15) return "text-warning";
+  return "text-destructive";
+}
+
 function getPercentColor(pct: number) {
   if (pct >= 100) return "text-success";
   if (pct >= 70) return "text-warning";
