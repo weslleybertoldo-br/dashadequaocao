@@ -3,6 +3,11 @@ import { PipefyCard, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface HostPageProps {
   phase9Cards: PipefyCard[];
