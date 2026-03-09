@@ -80,8 +80,7 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
-      const [phase8Cards, phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase8),
+      const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase9),
         fetchAllCardsForPhase(config.token, config.phase10),
         fetchAllCardsForPhase(config.token, config.phase5),
@@ -90,7 +89,8 @@ export function usePipefyData() {
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
+      // Early ativos estimate from phase9 cards only (phase8 no longer needed)
+      const stage1Cards = [...phase9Cards, ...phase10Cards];
       const ativos = countAtivosHoje(stage1Cards, config.phase9);
       setEntradasHoje(ativos);
 
