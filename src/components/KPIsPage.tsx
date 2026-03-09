@@ -229,6 +229,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<string | null>(null);
 
   // Load month data from Supabase
   useEffect(() => {
