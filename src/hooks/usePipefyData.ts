@@ -102,12 +102,8 @@ export function usePipefyData() {
           const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()), config.phase9);
           setEntradasHoje(ativosFinal);
 
-          // For finalizados: phase10 + recently updated cards
-          const finalizadosMap = new Map<string, PipefyCard>();
-          for (const card of [...phase10Cards, ...recentCards]) {
-            finalizadosMap.set(card.id, card);
-          }
-          const finalizadosFinal = countFinalizadosHoje(Array.from(finalizadosMap.values()));
+          // For finalizados: all cards updated today (includes phase 11 entries)
+          const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
           persistSnapshot(ativosFinal, finalizadosFinal);
