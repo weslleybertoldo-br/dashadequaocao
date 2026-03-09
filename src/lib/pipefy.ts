@@ -48,7 +48,7 @@ export async function fetchAllCardsForPhase(
   while (hasNextPage && page < maxPages) {
     page++;
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } } } } } }`;
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } phases_history { phase { id } firstTimeIn } } } } } }`;
 
     let lastError: Error | null = null;
     let responseData: any = null;
