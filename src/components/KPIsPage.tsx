@@ -202,25 +202,34 @@ function KPITable({
                     style={{ background: "hsl(225 20% 11%)" }}
                   >
                     <div className="text-[11px] text-muted-foreground mb-0.5">TOTAL</div>
-                    <span className="font-mono text-base font-bold text-foreground">{weekTotal}</span>
+                    <span
+                      className="font-mono font-bold"
+                      style={!showMetaColumns ? { fontSize: "1.25rem", color: "#06b6d4" } : { fontSize: "1rem" }}
+                    >
+                      {weekTotal}
+                    </span>
                   </td>
 
-                  <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">META</div>
-                    <span className="font-mono text-base text-muted-foreground">{META_SEMANAL}</span>
-                  </td>
+                  {showMetaColumns && (
+                    <>
+                      <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
+                        <div className="text-[11px] text-muted-foreground mb-0.5">META</div>
+                        <span className="font-mono text-base text-muted-foreground">{META_SEMANAL}</span>
+                      </td>
 
-                  <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
-                    {(() => {
-                      const faltam = Math.max(0, META_SEMANAL - weekTotal);
-                      return (
-                        <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
-                          {faltam === 0 ? "✓" : faltam}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                      <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
+                        <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
+                        {(() => {
+                          const faltam = Math.max(0, META_SEMANAL - weekTotal);
+                          return (
+                            <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
+                              {faltam === 0 ? "✓" : faltam}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
