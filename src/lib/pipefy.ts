@@ -97,6 +97,79 @@ export async function fetchAllCardsForPhase(
   return allCards;
 }
 
+/**
+ * Fetch cards updated since a given ISO timestamp using allCards + filter.
+ * Much faster than full phase pagination for "today" queries (~3000 → ~50 cards).
+ */
+export async function fetchCardsUpdatedSince(
+  token: string,
+  pipeId: string,
+  sinceISO: string,
+  maxPages = Infinity
+): Promise<PipefyCard[]> {
+  const allCards: PipefyCard[] = [];
+  let hasNextPage = true;
+  let cursor: string | null = null;
+  let page = 0;
+
+  while (hasNextPage && page < maxPages) {
+    page++;
+    const afterClause = cursor ? `, after: "${cursor}"` : "";
+    const query = `{ allCards(pipeId: ${pipeId}, first: 50${afterClause}, filter: {field: "updated_at", operator: gte, value: "${sinceISO}"}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } } } } }`;
+
+    let lastError: Error | null = null;
+    let responseData: any = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+      }
+
+      const bodyPayload: any = { query };
+      if (token && token !== "__USE_SERVER_TOKEN__") {
+        bodyPayload.token = token;
+      }
+      const { data, error: functionError } = await supabase.functions.invoke("pipefy-proxy", {
+        body: bodyPayload,
+      });
+
+      if (functionError) {
+        lastError = new Error(functionError.message || "Erro ao chamar pipefy-proxy");
+        continue;
+      }
+
+      const json = data as any;
+      if (json?.error && /502|504|Bad gateway|Gateway time/i.test(JSON.stringify(json))) {
+        lastError = new Error(`Pipefy indisponível (tentativa ${attempt + 1}/3)`);
+        continue;
+      }
+
+      if (!json?.data?.allCards) {
+        lastError = new Error("Resposta inválida do proxy (allCards)");
+        continue;
+      }
+
+      responseData = json;
+      lastError = null;
+      break;
+    }
+
+    if (lastError || !responseData) {
+      throw lastError || new Error("Falha após 3 tentativas (allCards)");
+    }
+
+    const json = responseData;
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+
+    const cardsData = json.data.allCards;
+    allCards.push(...cardsData.edges.map((e: any) => e.node));
+    hasNextPage = cardsData.pageInfo.hasNextPage;
+    cursor = cardsData.pageInfo.endCursor;
+  }
+
+  return allCards;
+}
+
 // ── Field helpers ────────────────────────────────────────
 
 export function getField(card: PipefyCard, fieldName: string): string {
