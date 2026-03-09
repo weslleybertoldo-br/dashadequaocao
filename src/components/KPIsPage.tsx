@@ -231,20 +231,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   const [loadingMes, setLoadingMes] = useState(true);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<string | null>(null);
 
-  // Load month data from Supabase
+  // Load month data and last update timestamp from Supabase
   useEffect(() => {
     setLoadingMes(true);
-    lerMesSupabase(ano, mes).then((mapa) => {
+    Promise.all([
+      lerMesSupabase(ano, mes),
+      lerUltimaAtualizacao(),
+    ]).then(([mapa, ts]) => {
       setDadosMes(mapa);
+      setUltimaAtualizacao(ts);
       setLoadingMes(false);
     });
   }, [ano, mes, refreshTrigger]);
-
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return m > 0 ? `${m}m ${s}s` : `${s}s`;
-  };
 
   // Auto-save today's dashboard values to Supabase
   useEffect(() => {
