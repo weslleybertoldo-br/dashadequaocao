@@ -352,6 +352,8 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
                   <SortableHeader label="Validação Enxoval" sortKey="validacao" sort={sort2} onSort={toggleSort(setSort2)} />
                   <SortableHeader label="Itens Faltantes" sortKey="itens" sort={sort2} onSort={toggleSort(setSort2)} />
                   <SortableHeader label="Manutenções Pendentes" sortKey="manutencoes" sort={sort2} onSort={toggleSort(setSort2)} />
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[150px]">Exceção</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider min-w-[200px]">Observação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -361,10 +363,11 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Validação Enxoval")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Itens faltantes atualmente")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Manutenções pendentes atualmente")} /></td>
+                    <ExcecaoRow cardTitle={card.title} />
                   </tr>
                 ))}
                 {filteredPipe2.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">Nenhum card encontrado.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">Nenhum card encontrado.</td></tr>
                 )}
               </tbody>
             </table>
