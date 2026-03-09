@@ -176,7 +176,9 @@ export function useKPIHistory() {
     if (diasParaBuscar.length === 0) return;
 
     setLoadingKPI(true);
+    setKpiDuration(null);
     setProgresso("Buscando histórico do Pipefy...");
+    const startTime = Date.now();
 
     try {
       const config = await loadConfigFromServer();
