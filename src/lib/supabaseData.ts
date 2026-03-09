@@ -139,11 +139,18 @@ export interface SnapshotHoje {
   imoveis: string[];
 }
 
+export interface SnapshotSaveResult {
+  success: boolean;
+  savedAt?: string;
+  error?: string;
+}
+
 export async function salvarSnapshotHoje(
   chave: string,
   valor: number,
   imoveis: string[]
-): Promise<void> {
+): Promise<SnapshotSaveResult> {
+  const salvo_em = new Date().toISOString();
   const { error } = await supabase
     .from("kpi_snapshot_hoje")
     .upsert(
@@ -151,11 +158,16 @@ export async function salvarSnapshotHoje(
         chave,
         valor,
         imoveis: imoveis as any,
-        salvo_em: new Date().toISOString(),
+        salvo_em,
       },
       { onConflict: "chave" }
     );
-  if (error) console.error("Erro ao salvar snapshot:", error);
+  if (error) {
+    console.error("ERRO ao salvar snapshot:", chave, error);
+    return { success: false, error: error.message };
+  }
+  console.log("Snapshot salvo:", { chave, valor, imoveis: imoveis.length });
+  return { success: true, savedAt: salvo_em };
 }
 
 export async function lerSnapshotsHoje(): Promise<Record<string, SnapshotHoje>> {
