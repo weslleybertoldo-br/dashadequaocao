@@ -202,25 +202,22 @@ function todayBRTDDMMYYYY(): string {
   return `${String(brt.getUTCDate()).padStart(2, "0")}/${String(brt.getUTCMonth() + 1).padStart(2, "0")}/${brt.getUTCFullYear()}`;
 }
 
-// ── "Ativos hoje" ────────────────────────────────────────
-// Card is "ativo hoje" if the field "Enviar mensagem de aviso de imóvel ativado"
-// has updated_at with today's date in BRT (UTC-3).
+// ── Phase history helpers ────────────────────────────────
+// Card "ativo hoje" = entered Phase 9 for the first time today (BRT)
+// Card "finalizado hoje" = entered Phase 11 for the first time today (BRT)
 
-export function getAtivoHoje(card: PipefyCard): boolean {
-  const field = card.fields.find((f) => f.name === "Enviar mensagem de aviso de imóvel ativado");
-  if (!field?.updated_at) return false;
-  const updatedKey = toBRTDateKey(new Date(field.updated_at));
-  return updatedKey === todayBRTKey();
+function enteredPhaseTodayBRT(card: PipefyCard, phaseId: string): boolean {
+  const entry = card.phases_history?.find((h) => String(h.phase.id) === String(phaseId));
+  if (!entry?.firstTimeIn) return false;
+  return toBRTDateKey(new Date(entry.firstTimeIn)) === todayBRTKey();
 }
 
-// ── "Finalizados hoje" ──────────────────────────────────
-// Card is "finalizado hoje" if the field "Implantação Finalizada"
-// has value equal to today's date in DD/MM/YYYY format.
+export function getAtivoHoje(card: PipefyCard, phase9Id: string): boolean {
+  return enteredPhaseTodayBRT(card, phase9Id);
+}
 
-export function getFinalizadoHoje(card: PipefyCard): boolean {
-  const field = card.fields.find((f) => f.name === "Implantação Finalizada");
-  if (!field?.value) return false;
-  return field.value.trim() === todayBRTDDMMYYYY();
+export function getFinalizadoHoje(card: PipefyCard, phase11Id: string): boolean {
+  return enteredPhaseTodayBRT(card, phase11Id);
 }
 
 // ── Today result type ────────────────────────────────────
@@ -230,18 +227,18 @@ export interface TodayResult {
   titles: string[];
 }
 
-export function countAtivosHoje(cards: PipefyCard[]): TodayResult {
+export function countAtivosHoje(cards: PipefyCard[], phase9Id: string): TodayResult {
   const titles: string[] = [];
   for (const card of cards) {
-    if (getAtivoHoje(card)) titles.push(card.title);
+    if (getAtivoHoje(card, phase9Id)) titles.push(card.title);
   }
   return { count: titles.length, titles };
 }
 
-export function countFinalizadosHoje(cards: PipefyCard[]): TodayResult {
+export function countFinalizadosHoje(cards: PipefyCard[], phase11Id: string): TodayResult {
   const titles: string[] = [];
   for (const card of cards) {
-    if (getFinalizadoHoje(card)) titles.push(card.title);
+    if (getFinalizadoHoje(card, phase11Id)) titles.push(card.title);
   }
   return { count: titles.length, titles };
 }
