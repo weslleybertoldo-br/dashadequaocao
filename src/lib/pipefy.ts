@@ -121,7 +121,7 @@ export async function fetchCardsUpdatedSince(
   while (hasNextPage && page < maxPages) {
     page++;
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ allCards(pipeId: ${pipeId}, first: 50${afterClause}, filter: {field: "updated_at", operator: gte, value: "${sinceISO}"}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } } } } }`;
+    const query = `{ allCards(pipeId: ${pipeId}, first: 50${afterClause}, filter: {field: "updated_at", operator: gte, value: "${sinceISO}"}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } phases_history { phase { id } firstTimeIn } } } } }`;
 
     let lastError: Error | null = null;
     let responseData: any = null;
