@@ -132,6 +132,21 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
   const [search2, setSearch2] = useState("");
   const [sort1, setSort1] = useState<SortState>({ key: "days", dir: "desc" });
   const [sort2, setSort2] = useState<SortState>({ key: "title", dir: "asc" });
+  const [excecoesMapa, setExcecoesMapa] = useState<Record<string, ExcecaoData>>({});
+
+  // Load exceções from Supabase on mount
+  useEffect(() => {
+    lerTodasExcecoesSupabase().then(setExcecoesMapa);
+  }, []);
+
+  const handleExcecaoUpdate = useCallback((imovelId: string, campo: "excecao" | "observacao", valor: string) => {
+    setExcecoesMapa((prev) => {
+      const atual = prev[imovelId] ?? { excecao: "", observacao: "" };
+      const novo = { ...atual, [campo]: valor };
+      salvarExcecaoSupabase(imovelId, novo.excecao, novo.observacao);
+      return { ...prev, [imovelId]: novo };
+    });
+  }, []);
 
   const toggleSort = (setter: React.Dispatch<React.SetStateAction<SortState>>) => (key: string) => {
     setter((prev) =>
