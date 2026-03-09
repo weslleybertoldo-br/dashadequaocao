@@ -236,5 +236,5 @@ export function useKPIHistory() {
     inicializar();
   }, [inicializar]);
 
-  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao };
+  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration };
 }
