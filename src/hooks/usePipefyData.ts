@@ -7,7 +7,8 @@ import {
   countFinalizadosHoje,
   loadConfigFromServer,
 } from "@/lib/pipefy";
-import { salvarSnapshotHoje, lerSnapshotsHoje } from "@/lib/supabaseData";
+import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
+import { hojeISO } from "@/hooks/useKPIHistory";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
