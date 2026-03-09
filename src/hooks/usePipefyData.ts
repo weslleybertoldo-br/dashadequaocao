@@ -118,7 +118,7 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(() => {
-          const finalizadosFallback = countFinalizadosHoje(phase10Cards);
+          const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
           persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);
