@@ -93,6 +93,13 @@ export function usePipefyData() {
           setConcluidosHoje(finalizadosFinal);
 
           persistSnapshot(ativosFinal, finalizadosFinal);
+
+          // Auto-save today's KPI to kpi_historico
+          const hojeStr = hojeISO();
+          salvarDiaSupabase(hojeStr, "ativacao", ativosFinal.count, ativosFinal.titles);
+          salvarDiaSupabase(hojeStr, "finalizados", finalizadosFinal.count, finalizadosFinal.titles);
+          salvarUltimaAtualizacao();
+
           setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
           setStage2Loading(false);
         })
