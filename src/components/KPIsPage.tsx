@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
-import { useKPIHistory, lerDia, salvarDia, hojeISO, DiaData } from "@/hooks/useKPIHistory";
+import { useKPIHistory, hojeISO, DiaData } from "@/hooks/useKPIHistory";
+import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,37 +131,15 @@ function KPITable({
   title,
   tipo,
   semanas,
-  refreshTrigger,
+  dadosMes,
+  onSaveCell,
 }: {
   title: string;
   tipo: string;
   semanas: Date[][];
-  refreshTrigger: number;
+  dadosMes: Record<string, DiaData>;
+  onSaveCell: (dataISO: string, tipo: string, value: number, imoveis: string[]) => void;
 }) {
-  const [dados, setDados] = useState<Record<string, DiaData | null>>({});
-
-  useEffect(() => {
-    const newDados: Record<string, DiaData | null> = {};
-    semanas.forEach((semana, sIdx) => {
-      semana.forEach((dia, dIdx) => {
-        const key = `sem${sIdx + 1}_dia${dIdx}`;
-        const dataISO = toDateISO(dia);
-        newDados[key] = lerDia(dataISO, tipo);
-      });
-    });
-    setDados(newDados);
-  }, [semanas, tipo, refreshTrigger]);
-
-  const handleSave = useCallback(
-    (cellKey: string, dia: Date, value: number) => {
-      const dataISO = toDateISO(dia);
-      const existing = lerDia(dataISO, tipo);
-      salvarDia(dataISO, tipo, value, existing?.imoveis ?? []);
-      setDados((prev) => ({ ...prev, [cellKey]: { total: value, imoveis: existing?.imoveis ?? [] } }));
-    },
-    [tipo]
-  );
-
   return (
     <div>
       <div className="mb-3 border-b border-primary/40 pb-2">
@@ -173,10 +152,10 @@ function KPITable({
         <table className="w-full border-collapse min-w-[700px]">
           <tbody>
             {semanas.map((semana, sIdx) => {
-              const weekTotal = semana.reduce(
-                (s, _, dIdx) => s + (dados[`sem${sIdx + 1}_dia${dIdx}`]?.total ?? 0),
-                0
-              );
+              const weekTotal = semana.reduce((s, dia) => {
+                const key = `${toDateISO(dia)}_${tipo}`;
+                return s + (dadosMes[key]?.total ?? 0);
+              }, 0);
               const pct = META_SEMANAL > 0 ? Math.round((weekTotal / META_SEMANAL) * 100) : 0;
 
               return (
@@ -189,8 +168,9 @@ function KPITable({
                   </td>
 
                   {semana.map((dia, dIdx) => {
-                    const key = `sem${sIdx + 1}_dia${dIdx}`;
-                    const dado = dados[key];
+                    const dataISO = toDateISO(dia);
+                    const key = `${dataISO}_${tipo}`;
+                    const dado = dadosMes[key] ?? null;
                     return (
                       <td
                         key={dIdx}
@@ -203,7 +183,7 @@ function KPITable({
                         <EditableCell
                           value={dado?.total ?? null}
                           imoveis={dado?.imoveis ?? []}
-                          onSave={(v) => handleSave(key, dia, v)}
+                          onSave={(v) => onSaveCell(dataISO, tipo, v, dado?.imoveis ?? [])}
                         />
                       </td>
                     );
@@ -247,43 +227,64 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration } = useKPIHistory();
 
+  const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
+  const [loadingMes, setLoadingMes] = useState(true);
+
+  // Load month data from Supabase
+  useEffect(() => {
+    setLoadingMes(true);
+    lerMesSupabase(ano, mes).then((mapa) => {
+      setDadosMes(mapa);
+      setLoadingMes(false);
+    });
+  }, [ano, mes, refreshTrigger]);
+
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return m > 0 ? `${m}m ${s}s` : `${s}s`;
   };
 
-  // Auto-save today's dashboard values when they update
+  // Auto-save today's dashboard values to Supabase
   useEffect(() => {
     if (entradasHoje === null || concluidosHoje === null) return;
-    const hojeStr = hoje.toDateString();
-    semanas.forEach((semana) => {
-      semana.forEach((dia) => {
-        if (dia.toDateString() === hojeStr) {
-          const dataISO = toDateISO(dia);
-          salvarDia(dataISO, "ativacao", entradasHoje.count, entradasHoje.titles);
-          salvarDia(dataISO, "finalizados", concluidosHoje.count, concluidosHoje.titles);
-        }
-      });
-    });
-  }, [entradasHoje, concluidosHoje, semanas]);
+    const hojeStr = hojeISO();
 
-  // Compute month totals from per-day localStorage keys
+    salvarDiaSupabase(hojeStr, "ativacao", entradasHoje.count, entradasHoje.titles);
+    salvarDiaSupabase(hojeStr, "finalizados", concluidosHoje.count, concluidosHoje.titles);
+
+    setDadosMes((prev) => ({
+      ...prev,
+      [`${hojeStr}_ativacao`]: { total: entradasHoje.count, imoveis: entradasHoje.titles },
+      [`${hojeStr}_finalizados`]: { total: concluidosHoje.count, imoveis: concluidosHoje.titles },
+    }));
+  }, [entradasHoje, concluidosHoje]);
+
+  // Handle manual cell edit
+  const handleSaveCell = useCallback(
+    (dataISO: string, tipo: string, value: number, imoveis: string[]) => {
+      salvarDiaSupabase(dataISO, tipo, value, imoveis);
+      setDadosMes((prev) => ({
+        ...prev,
+        [`${dataISO}_${tipo}`]: { total: value, imoveis },
+      }));
+    },
+    []
+  );
+
+  // Compute month totals
   const { totalAtivacao, totalFinalizados } = useMemo(() => {
     let tA = 0;
     let tF = 0;
     semanas.forEach((semana) => {
       semana.forEach((dia) => {
         const dataISO = toDateISO(dia);
-        const a = lerDia(dataISO, "ativacao");
-        const f = lerDia(dataISO, "finalizados");
-        tA += a?.total ?? 0;
-        tF += f?.total ?? 0;
+        tA += dadosMes[`${dataISO}_ativacao`]?.total ?? 0;
+        tF += dadosMes[`${dataISO}_finalizados`]?.total ?? 0;
       });
     });
     return { totalAtivacao: tA, totalFinalizados: tF };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [semanas, refreshTrigger, entradasHoje, concluidosHoje]);
+  }, [semanas, dadosMes]);
 
   const pctAtivacao = Math.round((totalAtivacao / META_MENSAL) * 100);
   const pctFinalizados = Math.round((totalFinalizados / META_MENSAL) * 100);
@@ -293,10 +294,10 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   return (
     <div className="space-y-8">
       {/* Loading indicator */}
-      {loadingKPI && (
+      {(loadingKPI || loadingMes) && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          {progresso || "Carregando histórico..."}
+          {loadingKPI ? (progresso || "Carregando histórico...") : "Carregando dados do mês..."}
         </div>
       )}
 
@@ -354,7 +355,8 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         title="Ativação"
         tipo="ativacao"
         semanas={semanas}
-        refreshTrigger={refreshTrigger}
+        dadosMes={dadosMes}
+        onSaveCell={handleSaveCell}
       />
 
       {/* Finalizados table */}
@@ -362,7 +364,8 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         title="Finalizados"
         tipo="finalizados"
         semanas={semanas}
-        refreshTrigger={refreshTrigger}
+        dadosMes={dadosMes}
+        onSaveCell={handleSaveCell}
       />
     </div>
   );
