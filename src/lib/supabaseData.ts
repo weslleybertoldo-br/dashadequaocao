@@ -40,6 +40,8 @@ export async function lerMesSupabase(
     .select("data_iso, tipo, total, imoveis")
     .like("data_iso", `${prefixo}%`);
 
+  console.log("[lerMesSupabase]", prefixo, "→", data?.length ?? 0, "rows", error ?? "OK");
+
   if (error) {
     console.error("Erro ao ler kpi_historico:", error);
     return {};
