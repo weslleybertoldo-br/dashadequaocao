@@ -131,6 +131,9 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <span style={{ fontFamily: "'Dancing Script', cursive", fontSize: "14px", color: "#e5e7eb" }}>
+              by Weslley Bertoldo
+            </span>
             {activeTab !== "no-adequacao" && (
               <>
                 <Tooltip>
