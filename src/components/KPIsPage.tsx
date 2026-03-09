@@ -389,6 +389,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         semanas={semanas}
         dadosMes={dadosMes}
         onSaveCell={handleSaveCell}
+        showMetaColumns={false}
       />
     </div>
   );
