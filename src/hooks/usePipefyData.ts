@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   PipefyCard,
   TodayResult,
@@ -7,6 +7,7 @@ import {
   countFinalizadosHoje,
   loadConfigFromServer,
 } from "@/lib/pipefy";
+import { salvarSnapshotHoje, lerSnapshotsHoje } from "@/lib/supabaseData";
 
 interface PipefyData {
   phase9Cards: PipefyCard[];
@@ -24,19 +25,34 @@ export function usePipefyData() {
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
 
+  // Load cached snapshots on mount
+  useEffect(() => {
+    lerSnapshotsHoje().then((snap) => {
+      if (snap["ativos_hoje"]) {
+        setEntradasHoje({ count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis });
+      }
+      if (snap["finalizados_hoje"]) {
+        setConcluidosHoje({ count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis });
+      }
+    });
+  }, []);
+
+  const persistSnapshot = useCallback((ativos: TodayResult, finalizados: TodayResult) => {
+    salvarSnapshotHoje("ativos_hoje", ativos.count, ativos.titles);
+    salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles);
+  }, []);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setEntradasHoje(null);
-    setConcluidosHoje(null);
-    setTodayLoading(true);
+    // Don't reset entradasHoje/concluidosHoje — keep cached values visible
+    setTodayLoading(false);
     setStage2Loading(false);
     setStage2Duration(null);
 
     try {
       const config = await loadConfigFromServer();
 
-      // ── STAGE 1 (fast): phases 8, 9, 10, 5 in parallel ──
       const [phase8Cards, phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase8),
         fetchAllCardsForPhase(config.token, config.phase9),
@@ -48,9 +64,11 @@ export function usePipefyData() {
       setLoading(false);
 
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
-      setEntradasHoje(countAtivosHoje(stage1Cards));
-      setConcluidosHoje(countFinalizadosHoje(phase10Cards));
-      setTodayLoading(false);
+      const ativos = countAtivosHoje(stage1Cards);
+      const finalizados = countFinalizadosHoje(phase10Cards);
+      setEntradasHoje(ativos);
+      setConcluidosHoje(finalizados);
+      persistSnapshot(ativos, finalizados);
 
       // ── STAGE 2 (background): phase 11 full pagination ──
       setStage2Loading(true);
@@ -62,14 +80,17 @@ export function usePipefyData() {
           for (const card of [...stage1Cards, ...phase11Cards]) {
             allCardsMap.set(card.id, card);
           }
-          setEntradasHoje(countAtivosHoje(Array.from(allCardsMap.values())));
+          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()));
+          setEntradasHoje(ativosFinal);
 
           const finalizadosMap = new Map<string, PipefyCard>();
           for (const card of [...phase10Cards, ...phase11Cards]) {
             finalizadosMap.set(card.id, card);
           }
-          setConcluidosHoje(countFinalizadosHoje(Array.from(finalizadosMap.values())));
+          const finalizadosFinal = countFinalizadosHoje(Array.from(finalizadosMap.values()));
+          setConcluidosHoje(finalizadosFinal);
 
+          persistSnapshot(ativosFinal, finalizadosFinal);
           setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
           setStage2Loading(false);
         })
@@ -81,7 +102,7 @@ export function usePipefyData() {
       setLoading(false);
       setTodayLoading(false);
     }
-  }, []);
+  }, [persistSnapshot]);
 
   return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration };
 }

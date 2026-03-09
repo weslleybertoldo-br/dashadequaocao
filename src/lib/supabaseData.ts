@@ -132,6 +132,47 @@ export async function lerUltimaAtualizacao(): Promise<string | null> {
   return data?.valor ?? null;
 }
 
+// ── Snapshot Hoje (cache Ativos/Finalizados) ─────────────
+
+export interface SnapshotHoje {
+  valor: number;
+  imoveis: string[];
+}
+
+export async function salvarSnapshotHoje(
+  chave: string,
+  valor: number,
+  imoveis: string[]
+): Promise<void> {
+  const { error } = await supabase
+    .from("kpi_snapshot_hoje")
+    .upsert(
+      {
+        chave,
+        valor,
+        imoveis: imoveis as any,
+        salvo_em: new Date().toISOString(),
+      },
+      { onConflict: "chave" }
+    );
+  if (error) console.error("Erro ao salvar snapshot:", error);
+}
+
+export async function lerSnapshotsHoje(): Promise<Record<string, SnapshotHoje>> {
+  const { data, error } = await supabase
+    .from("kpi_snapshot_hoje")
+    .select("chave, valor, imoveis");
+  if (error) {
+    console.error("Erro ao ler snapshots:", error);
+    return {};
+  }
+  const mapa: Record<string, SnapshotHoje> = {};
+  (data ?? []).forEach((row) => {
+    mapa[row.chave] = { valor: row.valor, imoveis: (row.imoveis as string[]) ?? [] };
+  });
+  return mapa;
+}
+
 // ── Migração localStorage → Supabase ─────────────────────
 
 export async function migrarLocalStorageParaSupabase(): Promise<void> {
