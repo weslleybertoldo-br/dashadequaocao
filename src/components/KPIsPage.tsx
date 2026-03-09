@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
-import { useKPIHistory, hojeISO, DiaData, DebugInfo } from "@/hooks/useKPIHistory";
-import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
-import { RefreshCw, Loader2, X } from "lucide-react";
+import { useKPIHistory, hojeISO, DiaData } from "@/hooks/useKPIHistory";
+import { lerMesSupabase, salvarDiaSupabase, lerUltimaAtualizacao } from "@/lib/supabaseData";
+import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
