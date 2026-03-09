@@ -67,10 +67,9 @@ export function usePipefyData() {
 
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
       const ativos = countAtivosHoje(stage1Cards);
-      const finalizados = countFinalizadosHoje(phase10Cards);
       setEntradasHoje(ativos);
-      setConcluidosHoje(finalizados);
-      persistSnapshot(ativos, finalizados);
+      // Don't set concluidosHoje here — phase 11 cards are needed for accurate count
+      // Snapshot value remains visible until Stage 2 completes
 
       // ── STAGE 2 (background): phase 11 full pagination ──
       setStage2Loading(true);
@@ -97,6 +96,10 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(() => {
+          // Fallback: use phase10-only count
+          const finalizadosFallback = countFinalizadosHoje(phase10Cards);
+          setConcluidosHoje(finalizadosFallback);
+          persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {
