@@ -161,6 +161,7 @@ export function useKPIHistory() {
   const [loadingKPI, setLoadingKPI] = useState(false);
   const [progresso, setProgresso] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [kpiDuration, setKpiDuration] = useState<number | null>(null);
 
   const inicializar = useCallback(async (forceAll = false) => {
     const dias = diasPassadosDoMes();
