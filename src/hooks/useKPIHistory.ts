@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadConfigFromServer } from "@/lib/pipefy";
 
@@ -15,7 +15,7 @@ function toDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function hojeISO(): string {
+export function hojeISO(): string {
   return toDateISO(toBRT(new Date()));
 }
 
@@ -38,17 +38,32 @@ function diasPassadosDoMes(): string[] {
 
 // ── localStorage helpers ─────────────────────────────────
 
+export interface DiaData {
+  total: number;
+  imoveis: string[];
+}
+
 function jaTemDado(dataISO: string, tipo: string): boolean {
   return localStorage.getItem(`kpi_dia_${dataISO}_${tipo}`) !== null;
 }
 
-function salvarDia(dataISO: string, tipo: string, valor: number): void {
-  localStorage.setItem(`kpi_dia_${dataISO}_${tipo}`, String(valor));
+export function salvarDia(dataISO: string, tipo: string, total: number, imoveis: string[] = []): void {
+  localStorage.setItem(`kpi_dia_${dataISO}_${tipo}`, JSON.stringify({ total, imoveis }));
 }
 
-export function lerDia(dataISO: string, tipo: string): number | null {
-  const val = localStorage.getItem(`kpi_dia_${dataISO}_${tipo}`);
-  return val !== null ? Number(val) : null;
+export function lerDia(dataISO: string, tipo: string): DiaData | null {
+  const raw = localStorage.getItem(`kpi_dia_${dataISO}_${tipo}`);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    // Backward compat: old format was just a number
+    if (typeof parsed === "number") return { total: parsed, imoveis: [] };
+    return parsed;
+  } catch {
+    // Backward compat: raw string number
+    const n = Number(raw);
+    return isNaN(n) ? null : { total: n, imoveis: [] };
+  }
 }
 
 // ── Fetch cards with phases_history ──────────────────────
@@ -127,18 +142,23 @@ async function buscarCardsComHistorico(
   return allCards;
 }
 
-// ── Count per day ────────────────────────────────────────
+// ── Count per day (with property names) ──────────────────
 
 const FASE_9_ID = "323044836";
 const FASE_11_ID = "323044845";
+
+interface ContagemDia {
+  total: number;
+  imoveis: string[];
+}
 
 function contarPorDia(
   cards: CardWithHistory[],
   faseId: string,
   listaDeDatas: string[]
-): Record<string, number> {
-  const contagem: Record<string, number> = {};
-  listaDeDatas.forEach((d) => (contagem[d] = 0));
+): Record<string, ContagemDia> {
+  const resultado: Record<string, ContagemDia> = {};
+  listaDeDatas.forEach((d) => (resultado[d] = { total: 0, imoveis: [] }));
 
   cards.forEach((card) => {
     const entrada = card.phases_history?.find(
@@ -147,12 +167,13 @@ function contarPorDia(
     if (!entrada?.firstTimeIn) return;
 
     const dataBRT = toDateISO(toBRT(new Date(entrada.firstTimeIn)));
-    if (contagem.hasOwnProperty(dataBRT)) {
-      contagem[dataBRT]++;
+    if (resultado.hasOwnProperty(dataBRT)) {
+      resultado[dataBRT].total++;
+      resultado[dataBRT].imoveis.push(card.title);
     }
   });
 
-  return contagem;
+  return resultado;
 }
 
 // ── Hook ─────────────────────────────────────────────────
@@ -204,8 +225,10 @@ export function useKPIHistory() {
       const contagemFinalizados = contarPorDia(cardsSemDuplicata, FASE_11_ID, diasParaBuscar);
 
       diasParaBuscar.forEach((dataISO) => {
-        salvarDia(dataISO, "ativacao", contagemAtivacao[dataISO] ?? 0);
-        salvarDia(dataISO, "finalizados", contagemFinalizados[dataISO] ?? 0);
+        const atv = contagemAtivacao[dataISO] ?? { total: 0, imoveis: [] };
+        const fin = contagemFinalizados[dataISO] ?? { total: 0, imoveis: [] };
+        salvarDia(dataISO, "ativacao", atv.total, atv.imoveis);
+        salvarDia(dataISO, "finalizados", fin.total, fin.imoveis);
       });
 
       setKpiDuration(Math.round((Date.now() - startTime) / 1000));
@@ -232,9 +255,7 @@ export function useKPIHistory() {
     inicializar(true);
   }, [inicializar]);
 
-  useEffect(() => {
-    inicializar();
-  }, [inicializar]);
+  // No auto-init on mount — only fetch when user clicks the button
 
   return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration };
 }

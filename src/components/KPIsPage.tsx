@@ -1,8 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
-import { useKPIHistory, lerDia } from "@/hooks/useKPIHistory";
+import { useKPIHistory, lerDia, salvarDia, hojeISO, DiaData } from "@/hooks/useKPIHistory";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface KPIsPageProps {
   entradasHoje: TodayResult | null;
@@ -56,9 +61,11 @@ function getPercentColor(pct: number) {
 
 function EditableCell({
   value,
+  imoveis,
   onSave,
 }: {
   value: number | null;
+  imoveis: string[];
   onSave: (v: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -90,9 +97,9 @@ function EditableCell({
     );
   }
 
-  return (
+  const display = (
     <span
-      className="cursor-pointer hover:text-primary transition-colors font-mono text-base"
+      className={`cursor-pointer hover:text-primary transition-colors font-mono text-base ${imoveis.length > 0 ? "border-b border-dotted border-muted-foreground/40" : ""}`}
       onClick={() => {
         setDraft(String(value ?? 0));
         setEditing(true);
@@ -101,6 +108,22 @@ function EditableCell({
       {value !== null ? value : "—"}
     </span>
   );
+
+  if (imoveis.length > 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{display}</TooltipTrigger>
+        <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+            {imoveis.length} imóve{imoveis.length !== 1 ? "is" : "l"}
+          </div>
+          {imoveis.join("\n")}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return display;
 }
 
 function KPITable({
@@ -114,12 +137,10 @@ function KPITable({
   semanas: Date[][];
   refreshTrigger: number;
 }) {
-  // Read all values from per-day localStorage keys
-  const [dados, setDados] = useState<Record<string, number | null>>({});
+  const [dados, setDados] = useState<Record<string, DiaData | null>>({});
 
-  // Load from per-day keys whenever refreshTrigger changes
   useEffect(() => {
-    const newDados: Record<string, number | null> = {};
+    const newDados: Record<string, DiaData | null> = {};
     semanas.forEach((semana, sIdx) => {
       semana.forEach((dia, dIdx) => {
         const key = `sem${sIdx + 1}_dia${dIdx}`;
@@ -133,17 +154,12 @@ function KPITable({
   const handleSave = useCallback(
     (cellKey: string, dia: Date, value: number) => {
       const dataISO = toDateISO(dia);
-      localStorage.setItem(`kpi_dia_${dataISO}_${tipo}`, String(value));
-      setDados((prev) => ({ ...prev, [cellKey]: value }));
+      const existing = lerDia(dataISO, tipo);
+      salvarDia(dataISO, tipo, value, existing?.imoveis ?? []);
+      setDados((prev) => ({ ...prev, [cellKey]: { total: value, imoveis: existing?.imoveis ?? [] } }));
     },
     [tipo]
   );
-
-  const totalMes = useMemo(() => {
-    return Object.values(dados).reduce((s: number, v) => s + (v ?? 0), 0);
-  }, [dados]);
-
-  const pctMes = META_MENSAL > 0 ? Math.round((totalMes / META_MENSAL) * 100) : 0;
 
   return (
     <div>
@@ -158,7 +174,7 @@ function KPITable({
           <tbody>
             {semanas.map((semana, sIdx) => {
               const weekTotal = semana.reduce(
-                (s, _, dIdx) => s + (dados[`sem${sIdx + 1}_dia${dIdx}`] ?? 0),
+                (s, _, dIdx) => s + (dados[`sem${sIdx + 1}_dia${dIdx}`]?.total ?? 0),
                 0
               );
               const pct = META_SEMANAL > 0 ? Math.round((weekTotal / META_SEMANAL) * 100) : 0;
@@ -174,6 +190,7 @@ function KPITable({
 
                   {semana.map((dia, dIdx) => {
                     const key = `sem${sIdx + 1}_dia${dIdx}`;
+                    const dado = dados[key];
                     return (
                       <td
                         key={dIdx}
@@ -184,7 +201,8 @@ function KPITable({
                           {DIAS_LABEL[dIdx]} {formatarData(dia)}
                         </div>
                         <EditableCell
-                          value={dados[key] ?? null}
+                          value={dado?.total ?? null}
+                          imoveis={dado?.imoveis ?? []}
                           onSave={(v) => handleSave(key, dia, v)}
                         />
                       </td>
@@ -243,8 +261,8 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       semana.forEach((dia) => {
         if (dia.toDateString() === hojeStr) {
           const dataISO = toDateISO(dia);
-          localStorage.setItem(`kpi_dia_${dataISO}_ativacao`, String(entradasHoje.count));
-          localStorage.setItem(`kpi_dia_${dataISO}_finalizados`, String(concluidosHoje.count));
+          salvarDia(dataISO, "ativacao", entradasHoje.count, entradasHoje.titles);
+          salvarDia(dataISO, "finalizados", concluidosHoje.count, concluidosHoje.titles);
         }
       });
     });
@@ -257,8 +275,10 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     semanas.forEach((semana) => {
       semana.forEach((dia) => {
         const dataISO = toDateISO(dia);
-        tA += lerDia(dataISO, "ativacao") ?? 0;
-        tF += lerDia(dataISO, "finalizados") ?? 0;
+        const a = lerDia(dataISO, "ativacao");
+        const f = lerDia(dataISO, "finalizados");
+        tA += a?.total ?? 0;
+        tF += f?.total ?? 0;
       });
     });
     return { totalAtivacao: tA, totalFinalizados: tF };
