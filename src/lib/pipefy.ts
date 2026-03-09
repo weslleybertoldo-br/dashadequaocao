@@ -244,7 +244,6 @@ export function countFinalizadosHoje(cards: PipefyCard[], phase11Id: string): To
 export interface PipefyConfig {
   token: string;
   pipeId: string;
-  phase8: string;
   phase9: string;
   phase10: string;
   phase5: string;
@@ -258,7 +257,6 @@ export async function loadConfigFromServer(): Promise<PipefyConfig> {
   return {
     token: localStorage.getItem("pipefy_token") || "__USE_SERVER_TOKEN__",
     pipeId: localStorage.getItem("pipefy_pipeId") || serverConfig.pipeId || "303781436",
-    phase8: localStorage.getItem("pipefy_phase8") || serverConfig.phase8 || "323044844",
     phase9: localStorage.getItem("pipefy_phase9") || serverConfig.phase9 || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || serverConfig.phase10 || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || serverConfig.phase5 || "333848127",
@@ -270,7 +268,6 @@ export function loadConfig(): PipefyConfig {
   return {
     token: localStorage.getItem("pipefy_token") || "__USE_SERVER_TOKEN__",
     pipeId: localStorage.getItem("pipefy_pipeId") || "303781436",
-    phase8: localStorage.getItem("pipefy_phase8") || "323044844",
     phase9: localStorage.getItem("pipefy_phase9") || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || "333848127",
@@ -280,7 +277,6 @@ export function loadConfig(): PipefyConfig {
 
 export function saveConfig(config: PipefyConfig) {
   localStorage.setItem("pipefy_token", config.token);
-  localStorage.setItem("pipefy_phase8", config.phase8);
   localStorage.setItem("pipefy_phase9", config.phase9);
   localStorage.setItem("pipefy_phase10", config.phase10);
   localStorage.setItem("pipefy_phase5", config.phase5);
