@@ -142,7 +142,28 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
             <div className="flex items-center gap-3">
               <div className="bg-secondary rounded-md px-3 py-1.5 text-center min-w-[80px]">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Cards</p>
-                <p className="text-lg font-mono font-bold">{host.cards.length}</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p
+                      className="text-lg font-mono font-bold cursor-help"
+                      style={{ borderBottom: "1px dotted #4b5563" }}
+                    >
+                      {host.cards.length}
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap"
+                    style={{ background: "#181c24", border: "1px solid #1e2330", borderRadius: 8, zIndex: 9999 }}
+                  >
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                      {host.cards.length} imóve{host.cards.length !== 1 ? "is" : "l"}
+                    </div>
+                    <div className="font-mono text-xs text-foreground">
+                      {host.cards.map((c) => c.title).join("\n")}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="bg-secondary rounded-md px-3 py-1.5 text-center min-w-[80px]">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Média Dias</p>
