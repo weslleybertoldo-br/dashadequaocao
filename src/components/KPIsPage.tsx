@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
-import { useKPIHistory, hojeISO, DiaData } from "@/hooks/useKPIHistory";
-import { lerMesSupabase, salvarDiaSupabase, lerUltimaAtualizacao } from "@/lib/supabaseData";
-import { RefreshCw, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { hojeISO, DiaData } from "@/hooks/useKPIHistory";
+import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
+import { Loader2 } from "lucide-react";
+
 import {
   Tooltip,
   TooltipContent,
@@ -247,24 +247,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
 
-  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao } = useKPIHistory();
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
-  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<string | null>(null);
 
   // Load month data and last update timestamp from Supabase
   useEffect(() => {
     setLoadingMes(true);
-    Promise.all([
-      lerMesSupabase(ano, mes),
-      lerUltimaAtualizacao(),
-    ]).then(([mapa, ts]) => {
+    lerMesSupabase(ano, mes).then((mapa) => {
       setDadosMes(mapa);
-      setUltimaAtualizacao(ts);
       setLoadingMes(false);
     });
-  }, [ano, mes, refreshTrigger]);
+  }, [ano, mes]);
 
   // Reflect live dashboard values independently — each updates as soon as available
   useEffect(() => {
@@ -315,52 +309,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   return (
     <div className="space-y-8">
-      {/* Last update timestamp */}
-      {ultimaAtualizacao && !loadingKPI && (
-        <div className="text-xs text-muted-foreground">
-          Atualizado em{" "}
-          {new Date(ultimaAtualizacao).toLocaleString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            timeZone: "America/Sao_Paulo",
-          }).replace(",", " ·")}
-        </div>
-      )}
-
       {/* Loading indicator */}
-      {(loadingKPI || loadingMes) && (
+      {loadingMes && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          {loadingKPI ? (progresso || "Carregando histórico...") : "Carregando dados do mês..."}
+          Carregando dados do mês...
         </div>
       )}
 
-      {/* Error message */}
-      {!loadingKPI && progresso && (
-        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-destructive/30 rounded-lg text-sm text-destructive">
-          {progresso}
-        </div>
-      )}
-
-      {/* Month label + refresh button */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-display uppercase tracking-widest">
-          {MESES[mes]} {ano}
-        </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={forcarAtualizacao}
-          disabled={loadingKPI}
-          className="gap-2 text-muted-foreground hover:text-foreground text-xs"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loadingKPI ? "animate-spin" : ""}`} />
-          Atualizar histórico
-        </Button>
-      </div>
+      {/* Month label */}
+      <p className="text-xs text-muted-foreground font-display uppercase tracking-widest">
+        {MESES[mes]} {ano}
+      </p>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4">
