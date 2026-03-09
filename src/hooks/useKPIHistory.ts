@@ -1,7 +1,10 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { loadConfigFromServer } from "@/lib/pipefy";
-import { salvarDiaSupabase, lerMesSupabase, salvarUltimaAtualizacao, DiaData } from "@/lib/supabaseData";
+import {
+  fetchCardsUpdatedSince,
+  loadConfigFromServer,
+  PipefyCard,
+} from "@/lib/pipefy";
+import { salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
 
 // Re-export for consumers
 export type { DiaData } from "@/lib/supabaseData";
@@ -40,83 +43,7 @@ function diasPassadosDoMes(): string[] {
   return dias;
 }
 
-// ── Fetch cards with phases_history ──────────────────────
-
-interface PhaseHistoryEntry {
-  phase: { id: string };
-  firstTimeIn: string;
-}
-
-interface CardWithHistory {
-  id: string;
-  title: string;
-  phases_history: PhaseHistoryEntry[];
-}
-
-async function buscarCardsComHistorico(
-  phaseId: string,
-  token: string
-): Promise<CardWithHistory[]> {
-  const allCards: CardWithHistory[] = [];
-  let cursor: string | null = null;
-  let hasNext = true;
-
-  while (hasNext) {
-    const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title phases_history { phase { id } firstTimeIn } } } } } }`;
-
-    const bodyPayload: any = { query };
-    if (token && token !== "__USE_SERVER_TOKEN__") {
-      bodyPayload.token = token;
-    }
-
-    let lastError: Error | null = null;
-    let responseData: any = null;
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
-      }
-
-      const { data, error } = await supabase.functions.invoke("pipefy-proxy", {
-        body: bodyPayload,
-      });
-
-      if (error) {
-        lastError = new Error(error.message || "Erro ao chamar pipefy-proxy");
-        continue;
-      }
-
-      const json = data as any;
-      if (json?.error && /502|504|Bad gateway|Gateway time/i.test(JSON.stringify(json))) {
-        lastError = new Error(`Pipefy indisponível (tentativa ${attempt + 1}/3)`);
-        continue;
-      }
-
-      if (!json?.data?.phase?.cards) {
-        lastError = new Error("Resposta inválida do proxy");
-        continue;
-      }
-
-      responseData = json;
-      lastError = null;
-      break;
-    }
-
-    if (lastError || !responseData) {
-      throw lastError || new Error("Falha após 3 tentativas");
-    }
-
-    const cards = responseData.data.phase.cards;
-    allCards.push(...cards.edges.map((e: any) => e.node));
-    hasNext = cards.pageInfo.hasNextPage;
-    cursor = cards.pageInfo.endCursor;
-  }
-
-  return allCards;
-}
-
-// ── Count per day (with property names) ──────────────────
+// ── Count per day using phases_history ───────────────────
 
 const FASE_9_ID = "323044836";
 const FASE_11_ID = "323044845";
@@ -127,7 +54,7 @@ interface ContagemDia {
 }
 
 function contarPorDia(
-  cards: CardWithHistory[],
+  cards: PipefyCard[],
   faseId: string,
   listaDeDatas: string[]
 ): Record<string, ContagemDia> {
@@ -167,17 +94,18 @@ export function useKPIHistory() {
     try {
       const config = await loadConfigFromServer();
 
-      const [cardsF9, cardsF10, cardsF11] = await Promise.all([
-        buscarCardsComHistorico("323044836", config.token),
-        buscarCardsComHistorico("326702699", config.token),
-        buscarCardsComHistorico("323044845", config.token),
-      ]);
+      // Single query: all cards updated since the 1st of the month
+      const primeiroDia = dias[0]; // e.g. "2026-03-01"
+      const sinceISO = `${primeiroDia}T00:00:00-03:00`;
+
+      const allCards = await fetchCardsUpdatedSince(config.token, config.pipeId, sinceISO);
 
       setProgresso("Processando dados...");
 
+      // Deduplicate
       const vistos = new Set<string>();
-      const cardsSemDuplicata: CardWithHistory[] = [];
-      for (const c of [...cardsF9, ...cardsF10, ...cardsF11]) {
+      const cardsSemDuplicata: PipefyCard[] = [];
+      for (const c of allCards) {
         if (!vistos.has(c.id)) {
           vistos.add(c.id);
           cardsSemDuplicata.push(c);
@@ -198,7 +126,6 @@ export function useKPIHistory() {
       });
       await Promise.all(savePromises);
 
-      // Save last update timestamp
       await salvarUltimaAtualizacao();
 
       setProgresso(null);
