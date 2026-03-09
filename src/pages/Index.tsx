@@ -196,28 +196,29 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            {loading && (
+            {!data && loading && !entradasHoje && !concluidosHoje && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Carregando dados do Pipefy...</p>
               </div>
             )}
-            {error && (
+            {error && !data && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <AlertTriangle className="w-8 h-8 text-destructive" />
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
-            {data && !loading && (
+            {(data || entradasHoje || concluidosHoje) && (
               <OverviewPage
-                phase9Cards={data.phase9Cards}
-                phase10Cards={data.phase10Cards}
-                phase5Cards={data.phase5Cards}
+                phase9Cards={data?.phase9Cards ?? []}
+                phase10Cards={data?.phase10Cards ?? []}
+                phase5Cards={data?.phase5Cards ?? []}
                 entradasHoje={entradasHoje}
                 concluidosHoje={concluidosHoje}
                 todayLoading={todayLoading}
                 stage2Loading={stage2Loading}
                 stage2Duration={stage2Duration}
+                tablesLoading={loading}
               />
             )}
           </TabsContent>

@@ -67,6 +67,7 @@ interface OverviewPageProps {
   todayLoading: boolean;
   stage2Loading: boolean;
   stage2Duration: number | null;
+  tablesLoading?: boolean;
 }
 
 
