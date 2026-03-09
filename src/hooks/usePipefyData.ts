@@ -24,16 +24,24 @@ export function usePipefyData() {
   const [todayLoading, setTodayLoading] = useState(false);
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
+  const [snapshotLoaded, setSnapshotLoaded] = useState(false);
 
-  // Load cached snapshots on mount
+  // Load cached snapshots on mount — runs before any Pipefy fetch
   useEffect(() => {
     lerSnapshotsHoje().then((snap) => {
-      if (snap["ativos_hoje"]) {
-        setEntradasHoje({ count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis });
-      }
-      if (snap["finalizados_hoje"]) {
-        setConcluidosHoje({ count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis });
-      }
+      setEntradasHoje((prev) => {
+        if (prev) return prev; // fresh data already arrived
+        return snap["ativos_hoje"]
+          ? { count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis }
+          : null;
+      });
+      setConcluidosHoje((prev) => {
+        if (prev) return prev;
+        return snap["finalizados_hoje"]
+          ? { count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis }
+          : null;
+      });
+      setSnapshotLoaded(true);
     });
   }, []);
 
