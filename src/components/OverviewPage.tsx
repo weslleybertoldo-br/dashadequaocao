@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
@@ -7,6 +7,80 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+// ── Exceção helpers ──────────────────────────────────────
+
+interface ExcecaoData {
+  excecao: string;
+  observacao: string;
+}
+
+function lerExcecao(imovelId: string): ExcecaoData {
+  const raw = localStorage.getItem(`excecao_${imovelId}`);
+  if (!raw) return { excecao: "", observacao: "" };
+  try { return JSON.parse(raw); } catch { return { excecao: "", observacao: "" }; }
+}
+
+function salvarExcecao(imovelId: string, excecao: string, observacao: string) {
+  localStorage.setItem(`excecao_${imovelId}`, JSON.stringify({ excecao, observacao }));
+}
+
+function ExcecaoRow({ cardTitle }: { cardTitle: string }) {
+  const [dados, setDados] = useState<ExcecaoData>(() => lerExcecao(cardTitle));
+
+  const handleExcecao = useCallback((valor: string) => {
+    setDados((prev) => {
+      const novo = { ...prev, excecao: valor };
+      salvarExcecao(cardTitle, novo.excecao, novo.observacao);
+      return novo;
+    });
+  }, [cardTitle]);
+
+  const handleObservacao = useCallback((valor: string) => {
+    setDados((prev) => {
+      const novo = { ...prev, observacao: valor };
+      salvarExcecao(cardTitle, novo.excecao, novo.observacao);
+      return novo;
+    });
+  }, [cardTitle]);
+
+  const selectBg = dados.excecao === "Liberado exceção"
+    ? "bg-success/10"
+    : dados.excecao === "Exceção parcial"
+    ? "bg-warning/10"
+    : "bg-secondary";
+
+  const selectText = dados.excecao === "Liberado exceção"
+    ? "text-success"
+    : dados.excecao === "Exceção parcial"
+    ? "text-warning"
+    : "text-muted-foreground";
+
+  return (
+    <>
+      <td className="px-4 py-3 text-sm">
+        <select
+          value={dados.excecao}
+          onChange={(e) => handleExcecao(e.target.value)}
+          className={`${selectBg} ${selectText} border border-border rounded-md px-2 py-1 text-xs cursor-pointer outline-none min-w-[140px]`}
+        >
+          <option value="">— Selecionar —</option>
+          <option value="Liberado exceção">Liberado exceção</option>
+          <option value="Exceção parcial">Exceção parcial</option>
+        </select>
+      </td>
+      <td className="px-4 py-3 text-sm">
+        <input
+          type="text"
+          value={dados.observacao}
+          onChange={(e) => handleObservacao(e.target.value)}
+          placeholder="Observação..."
+          className="bg-secondary border border-border rounded-md px-2.5 py-1 text-xs text-foreground outline-none min-w-[180px] w-full focus:border-primary transition-colors"
+        />
+      </td>
+    </>
+  );
+}
 
 interface OverviewPageProps {
   phase9Cards: PipefyCard[];
