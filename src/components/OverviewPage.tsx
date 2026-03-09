@@ -68,6 +68,7 @@ interface OverviewPageProps {
   stage2Loading: boolean;
   stage2Duration: number | null;
   tablesLoading?: boolean;
+  snapshotStatus?: { success: boolean; savedAt?: string; error?: string } | null;
 }
 
 
