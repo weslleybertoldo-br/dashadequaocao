@@ -258,7 +258,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
                 <p className="text-xs text-muted-foreground">Finalizados hoje</p>
                 {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
               </div>
-              {todayLoading ? (
+              {todayLoading && !concluidosHoje ? (
                 <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
               ) : concluidosHoje && concluidosHoje.count > 0 ? (
                 <Tooltip>
