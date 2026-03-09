@@ -83,21 +83,28 @@ export function usePipefyData() {
       const ativos = countAtivosHoje(stage1Cards);
       setEntradasHoje(ativos);
 
-      // ── STAGE 2 (background): phase 11 full pagination ──
+      // ── STAGE 2 (optimized): fetch only cards updated today ──
       setStage2Loading(true);
       const stage2Start = Date.now();
 
-      fetchAllCardsForPhase(config.token, config.phase11)
-        .then((phase11Cards) => {
+      // Build BRT start-of-day ISO string for the filter
+      const now = new Date();
+      const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStart = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}T00:00:00-03:00`;
+
+      fetchCardsUpdatedSince(config.token, config.pipeId, todayStart)
+        .then((recentCards) => {
+          // Merge stage1 + recently updated cards (includes phase 11 cards updated today)
           const allCardsMap = new Map<string, PipefyCard>();
-          for (const card of [...stage1Cards, ...phase11Cards]) {
+          for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
           }
           const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()));
           setEntradasHoje(ativosFinal);
 
+          // For finalizados: phase10 + recently updated cards
           const finalizadosMap = new Map<string, PipefyCard>();
-          for (const card of [...phase10Cards, ...phase11Cards]) {
+          for (const card of [...phase10Cards, ...recentCards]) {
             finalizadosMap.set(card.id, card);
           }
           const finalizadosFinal = countFinalizadosHoje(Array.from(finalizadosMap.values()));

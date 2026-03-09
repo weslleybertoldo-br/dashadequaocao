@@ -182,7 +182,7 @@ export function getDaysInPhase(card: PipefyCard): number {
 
 // ── BRT date helpers ─────────────────────────────────────
 
-function toBRTDateKey(date: Date): string {
+export function toBRTDateKey(date: Date): string {
   const brt = new Date(date.getTime() - 3 * 60 * 60 * 1000);
   return `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}`;
 }
