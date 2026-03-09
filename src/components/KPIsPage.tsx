@@ -294,21 +294,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   );
 
   // Compute month totals
-  const { totalAtivacao, totalFinalizados } = useMemo(() => {
+  const totalAtivacao = useMemo(() => {
     let tA = 0;
-    let tF = 0;
     semanas.forEach((semana) => {
       semana.forEach((dia) => {
         const dataISO = toDateISO(dia);
         tA += dadosMes[`${dataISO}_ativacao`]?.total ?? 0;
-        tF += dadosMes[`${dataISO}_finalizados`]?.total ?? 0;
       });
     });
-    return { totalAtivacao: tA, totalFinalizados: tF };
+    return tA;
   }, [semanas, dadosMes]);
 
   const pctAtivacao = Math.round((totalAtivacao / META_MENSAL) * 100);
-  const pctFinalizados = Math.round((totalFinalizados / META_MENSAL) * 100);
 
   const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
