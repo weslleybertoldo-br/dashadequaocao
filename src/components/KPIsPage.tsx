@@ -315,6 +315,8 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         </div>
       )}
 
+      {/* Loading indicator */}
+      {(loadingKPI || loadingMes) && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
           {loadingKPI ? (progresso || "Carregando histórico...") : "Carregando dados do mês..."}
