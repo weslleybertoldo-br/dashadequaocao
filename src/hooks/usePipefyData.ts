@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   PipefyCard,
   TodayResult,
@@ -24,20 +24,28 @@ export function usePipefyData() {
   const [concluidosHoje, setConcluidosHoje] = useState<TodayResult | null>(null);
   const [snapshotEntradas, setSnapshotEntradas] = useState<TodayResult | null>(null);
   const [snapshotConcluidos, setSnapshotConcluidos] = useState<TodayResult | null>(null);
+  const [snapshotReady, setSnapshotReady] = useState(false);
   const [todayLoading, setTodayLoading] = useState(false);
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
 
-  // Load cached snapshots on mount — independent of Pipefy state
+  // Track whether snapshots have been loaded — Pipefy fetch waits for this
+  const snapshotLoadedRef = useRef(false);
+  const snapshotPromiseRef = useRef<Promise<void> | null>(null);
+
+  // Load cached snapshots on mount — runs ONCE and resolves quickly
   useEffect(() => {
-    lerSnapshotsHoje().then((snap) => {
+    const promise = lerSnapshotsHoje().then((snap) => {
       if (snap["ativos_hoje"]) {
         setSnapshotEntradas({ count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis });
       }
       if (snap["finalizados_hoje"]) {
         setSnapshotConcluidos({ count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis });
       }
+      snapshotLoadedRef.current = true;
+      setSnapshotReady(true);
     });
+    snapshotPromiseRef.current = promise;
   }, []);
 
   const persistSnapshot = useCallback((ativos: TodayResult, finalizados: TodayResult) => {
@@ -46,9 +54,13 @@ export function usePipefyData() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    // Wait for snapshot to load first so UI shows cached values before loading state
+    if (snapshotPromiseRef.current) {
+      await snapshotPromiseRef.current;
+    }
+
     setLoading(true);
     setError(null);
-    // Don't reset entradasHoje/concluidosHoje — keep cached values visible
     setTodayLoading(false);
     setStage2Loading(false);
     setStage2Duration(null);
@@ -69,8 +81,6 @@ export function usePipefyData() {
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
       const ativos = countAtivosHoje(stage1Cards);
       setEntradasHoje(ativos);
-      // Don't set concluidosHoje here — phase 11 cards are needed for accurate count
-      // Snapshot value remains visible until Stage 2 completes
 
       // ── STAGE 2 (background): phase 11 full pagination ──
       setStage2Loading(true);
@@ -104,7 +114,6 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(() => {
-          // Fallback: use phase10-only count
           const finalizadosFallback = countFinalizadosHoje(phase10Cards);
           setConcluidosHoje(finalizadosFallback);
           persistSnapshot(ativos, finalizadosFallback);
@@ -121,5 +130,5 @@ export function usePipefyData() {
   const effectiveEntradas = entradasHoje ?? snapshotEntradas;
   const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
 
-  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration };
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady };
 }
