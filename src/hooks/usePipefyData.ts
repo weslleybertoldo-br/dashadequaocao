@@ -90,8 +90,6 @@ export function usePipefyData() {
       setLoading(false);
 
       const stage1Cards = [...phase9Cards, ...phase10Cards];
-      const ativos = countAtivosHoje(stage1Cards, config.phase9);
-      setEntradasHoje(ativos);
 
       // ── STAGE 2 (optimized): fetch only cards updated today ──
       setStage2Loading(true);
@@ -124,9 +122,11 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(async () => {
+          const ativosFallback = countAtivosHoje(stage1Cards, config.phase9);
+          setEntradasHoje(ativosFallback);
           const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
-          await persistSnapshot(ativos, finalizadosFallback);
+          await persistSnapshot(ativosFallback, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {
