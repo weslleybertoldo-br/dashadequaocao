@@ -8,7 +8,7 @@ import {
   countFinalizadosHoje,
   loadConfigFromServer,
 } from "@/lib/pipefy";
-import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao, SnapshotSaveResult } from "@/lib/supabaseData";
+import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
 import { hojeISO } from "@/hooks/useKPIHistory";
 
 interface PipefyData {
@@ -29,22 +29,24 @@ export function usePipefyData() {
   const [todayLoading, setTodayLoading] = useState(false);
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
-  const [snapshotStatus, setSnapshotStatus] = useState<{ success: boolean; savedAt?: string; error?: string } | null>(null);
 
-  // Track whether snapshots have been loaded — Pipefy fetch waits for this
-  const snapshotLoadedRef = useRef(false);
+  // Snapshot data ref — synchronously available after await
+  const snapshotDataRef = useRef<{ entradas: TodayResult | null; concluidos: TodayResult | null }>({ entradas: null, concluidos: null });
   const snapshotPromiseRef = useRef<Promise<void> | null>(null);
 
-  // Load cached snapshots on mount — runs ONCE and resolves quickly
+  // Load cached snapshots on mount — runs ONCE
   useEffect(() => {
     const promise = lerSnapshotsHoje().then((snap) => {
       if (snap["ativos_hoje"]) {
-        setSnapshotEntradas({ count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis });
+        const val = { count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis };
+        snapshotDataRef.current.entradas = val;
+        setSnapshotEntradas(val);
       }
       if (snap["finalizados_hoje"]) {
-        setSnapshotConcluidos({ count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis });
+        const val = { count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis };
+        snapshotDataRef.current.concluidos = val;
+        setSnapshotConcluidos(val);
       }
-      snapshotLoadedRef.current = true;
       setSnapshotReady(true);
     });
     snapshotPromiseRef.current = promise;
@@ -56,17 +58,14 @@ export function usePipefyData() {
       salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles),
     ]);
     if (r1.success && r2.success) {
-      setSnapshotStatus({ success: true, savedAt: r1.savedAt });
       console.log("Snapshots salvos:", { ativos: ativos.count, finalizados: finalizados.count });
     } else {
-      const errMsg = r1.error || r2.error || "Erro desconhecido";
-      setSnapshotStatus({ success: false, error: errMsg });
-      console.error("Falha ao salvar snapshots:", errMsg);
+      console.error("Falha ao salvar snapshots:", r1.error || r2.error);
     }
   }, []);
 
   const fetchData = useCallback(async () => {
-    // Wait for snapshot to load first so UI shows cached values before loading state
+    // 1. FIRST: ensure snapshot is loaded and applied
     if (snapshotPromiseRef.current) {
       await snapshotPromiseRef.current;
     }
@@ -80,6 +79,7 @@ export function usePipefyData() {
     try {
       const config = await loadConfigFromServer();
 
+      // 2. THEN: fetch Pipefy data
       const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase9),
         fetchAllCardsForPhase(config.token, config.phase10),
@@ -89,7 +89,6 @@ export function usePipefyData() {
       setData({ phase9Cards, phase10Cards, phase5Cards });
       setLoading(false);
 
-      // Early ativos estimate from phase9 cards only (phase8 no longer needed)
       const stage1Cards = [...phase9Cards, ...phase10Cards];
       const ativos = countAtivosHoje(stage1Cards, config.phase9);
       setEntradasHoje(ativos);
@@ -98,14 +97,12 @@ export function usePipefyData() {
       setStage2Loading(true);
       const stage2Start = Date.now();
 
-      // Build BRT start-of-day ISO string for the filter
       const now = new Date();
       const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStart = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}T00:00:00-03:00`;
 
       fetchCardsUpdatedSince(config.token, config.pipeId, todayStart)
         .then(async (recentCards) => {
-          // Merge stage1 + recently updated cards (includes phase 11 cards updated today)
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
@@ -113,13 +110,11 @@ export function usePipefyData() {
           const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()), config.phase9);
           setEntradasHoje(ativosFinal);
 
-          // For finalizados: all cards updated today (includes phase 11 entries)
           const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
           await persistSnapshot(ativosFinal, finalizadosFinal);
 
-          // Auto-save today's KPI to kpi_historico
           const hojeStr = hojeISO();
           salvarDiaSupabase(hojeStr, "ativacao", ativosFinal.count, ativosFinal.titles);
           salvarDiaSupabase(hojeStr, "finalizados", finalizadosFinal.count, finalizadosFinal.titles);
@@ -145,5 +140,5 @@ export function usePipefyData() {
   const effectiveEntradas = entradasHoje ?? snapshotEntradas;
   const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
 
-  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady, snapshotStatus };
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady };
 }
