@@ -99,7 +99,7 @@ export function usePipefyData() {
           for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
           }
-          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()));
+          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()), config.phase9);
           setEntradasHoje(ativosFinal);
 
           // For finalizados: phase10 + recently updated cards
