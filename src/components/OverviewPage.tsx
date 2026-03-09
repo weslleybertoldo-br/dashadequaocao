@@ -354,7 +354,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Validação Enxoval")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Itens faltantes atualmente")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Manutenções pendentes atualmente")} /></td>
-                    <ExcecaoRow cardTitle={card.title} />
+                    <ExcecaoRow cardTitle={card.title} excecoesMapa={excecoesMapa} onUpdate={handleExcecaoUpdate} />
                   </tr>
                 ))}
                 {filteredPipe2.length === 0 && (
