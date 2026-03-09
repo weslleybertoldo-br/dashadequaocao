@@ -104,7 +104,7 @@ export function usePipefyData() {
       const todayStart = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}T00:00:00-03:00`;
 
       fetchCardsUpdatedSince(config.token, config.pipeId, todayStart)
-        .then((recentCards) => {
+        .then(async (recentCards) => {
           // Merge stage1 + recently updated cards (includes phase 11 cards updated today)
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...recentCards]) {
@@ -117,7 +117,7 @@ export function usePipefyData() {
           const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
-          persistSnapshot(ativosFinal, finalizadosFinal);
+          await persistSnapshot(ativosFinal, finalizadosFinal);
 
           // Auto-save today's KPI to kpi_historico
           const hojeStr = hojeISO();
@@ -128,10 +128,10 @@ export function usePipefyData() {
           setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
           setStage2Loading(false);
         })
-        .catch(() => {
+        .catch(async () => {
           const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
-          persistSnapshot(ativos, finalizadosFallback);
+          await persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {
