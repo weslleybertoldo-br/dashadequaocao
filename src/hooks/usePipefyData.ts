@@ -88,21 +88,11 @@ export function usePipefyData() {
 
       fetchAllCardsForPhase(config.token, config.phase11)
         .then((phase11Cards) => {
-          console.log(`[Stage2] phase11Cards: ${phase11Cards.length} cards`);
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...phase11Cards]) {
             allCardsMap.set(card.id, card);
           }
-          // Debug: find TAU0204 and log its field data
-          const debugCard = Array.from(allCardsMap.values()).find(c => c.title === "TAU0204");
-          if (debugCard) {
-            const ativoField = debugCard.fields.find(f => f.name === "Enviar mensagem de aviso de imóvel ativado");
-            console.log(`[Debug TAU0204] phase: ${debugCard.current_phase.name}, field: ${JSON.stringify(ativoField)}`);
-          } else {
-            console.log("[Debug TAU0204] NOT FOUND in any fetched phase");
-          }
           const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()));
-          console.log(`[Stage2] ativosFinal: ${ativosFinal.count}`, ativosFinal.titles);
           setEntradasHoje(ativosFinal);
 
           const finalizadosMap = new Map<string, PipefyCard>();
