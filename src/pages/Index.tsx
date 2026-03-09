@@ -219,6 +219,7 @@ const Index = () => {
                 stage2Loading={stage2Loading}
                 stage2Duration={stage2Duration}
                 tablesLoading={loading}
+                snapshotStatus={snapshotStatus}
               />
             )}
           </TabsContent>
