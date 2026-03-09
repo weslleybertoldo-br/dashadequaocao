@@ -362,21 +362,13 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Total Ativações (mês)</p>
           <p className={`text-2xl font-mono font-bold ${getPercentColor(pctAtivacao)}`}>{totalAtivacao}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Meta Mensal Ativação</p>
-          <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total Finalizados (mês)</p>
-          <p className={`text-2xl font-mono font-bold ${getPercentColor(pctFinalizados)}`}>{totalFinalizados}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Meta Mensal Finalizados</p>
           <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
         </div>
       </div>
