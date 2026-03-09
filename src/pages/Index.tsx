@@ -77,8 +77,8 @@ const Index = () => {
 
   useEffect(() => {
     const SCHEDULES = [
-      { hour: 10, minute: 0 },
-      { hour: 18, minute: 20 },
+      { hour: 6, minute: 0 },
+      { hour: 19, minute: 0 },
     ];
 
     const getNextSchedule = () => {
@@ -148,7 +148,7 @@ const Index = () => {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Auto-refresh às 10:00 e 18:20 (Brasília)</p>
+                    <p className="text-xs">Auto-refresh às 06:00 e 19:00 (Brasília)</p>
                   </TooltipContent>
                 </Tooltip>
 
