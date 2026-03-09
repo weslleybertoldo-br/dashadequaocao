@@ -266,13 +266,10 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     });
   }, [ano, mes, refreshTrigger]);
 
-  // Auto-save today's dashboard values to Supabase
+  // Reflect live dashboard values in the local table state (already saved by usePipefyData)
   useEffect(() => {
     if (entradasHoje === null || concluidosHoje === null) return;
     const hojeStr = hojeISO();
-
-    salvarDiaSupabase(hojeStr, "ativacao", entradasHoje.count, entradasHoje.titles);
-    salvarDiaSupabase(hojeStr, "finalizados", concluidosHoje.count, concluidosHoje.titles);
 
     setDadosMes((prev) => ({
       ...prev,
