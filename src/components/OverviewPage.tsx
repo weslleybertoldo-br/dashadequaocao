@@ -278,6 +278,13 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
         </div>
       </div>
 
+      {tablesLoading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando tabelas...</p>
+        </div>
+      ) : (
+      <>
       {/* Pipe 1 Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
