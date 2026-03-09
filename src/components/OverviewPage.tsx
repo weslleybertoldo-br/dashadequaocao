@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { PipefyCard, TodayResult, getField, getDaysInPhase } from "@/lib/pipefy";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
@@ -7,42 +7,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ExcecaoData, lerTodasExcecoesSupabase, salvarExcecaoSupabase } from "@/lib/supabaseData";
 
-// ── Exceção helpers ──────────────────────────────────────
-
-interface ExcecaoData {
-  excecao: string;
-  observacao: string;
-}
-
-function lerExcecao(imovelId: string): ExcecaoData {
-  const raw = localStorage.getItem(`excecao_${imovelId}`);
-  if (!raw) return { excecao: "", observacao: "" };
-  try { return JSON.parse(raw); } catch { return { excecao: "", observacao: "" }; }
-}
-
-function salvarExcecao(imovelId: string, excecao: string, observacao: string) {
-  localStorage.setItem(`excecao_${imovelId}`, JSON.stringify({ excecao, observacao }));
-}
-
-function ExcecaoRow({ cardTitle }: { cardTitle: string }) {
-  const [dados, setDados] = useState<ExcecaoData>(() => lerExcecao(cardTitle));
-
-  const handleExcecao = useCallback((valor: string) => {
-    setDados((prev) => {
-      const novo = { ...prev, excecao: valor };
-      salvarExcecao(cardTitle, novo.excecao, novo.observacao);
-      return novo;
-    });
-  }, [cardTitle]);
-
-  const handleObservacao = useCallback((valor: string) => {
-    setDados((prev) => {
-      const novo = { ...prev, observacao: valor };
-      salvarExcecao(cardTitle, novo.excecao, novo.observacao);
-      return novo;
-    });
-  }, [cardTitle]);
+function ExcecaoRow({
+  cardTitle,
+  excecoesMapa,
+  onUpdate,
+}: {
+  cardTitle: string;
+  excecoesMapa: Record<string, ExcecaoData>;
+  onUpdate: (imovelId: string, campo: "excecao" | "observacao", valor: string) => void;
+}) {
+  const dados = excecoesMapa[cardTitle] ?? { excecao: "", observacao: "" };
 
   const selectBg = dados.excecao === "Liberado exceção"
     ? "bg-success/10"
@@ -61,7 +37,7 @@ function ExcecaoRow({ cardTitle }: { cardTitle: string }) {
       <td className="px-4 py-3 text-sm">
         <select
           value={dados.excecao}
-          onChange={(e) => handleExcecao(e.target.value)}
+          onChange={(e) => onUpdate(cardTitle, "excecao", e.target.value)}
           className={`${selectBg} ${selectText} border border-border rounded-md px-2 py-1 text-xs cursor-pointer outline-none min-w-[140px]`}
         >
           <option value="">— Selecionar —</option>
@@ -73,7 +49,7 @@ function ExcecaoRow({ cardTitle }: { cardTitle: string }) {
         <input
           type="text"
           value={dados.observacao}
-          onChange={(e) => handleObservacao(e.target.value)}
+          onChange={(e) => onUpdate(cardTitle, "observacao", e.target.value)}
           placeholder="Observação..."
           className="bg-secondary border border-border rounded-md px-2.5 py-1 text-xs text-foreground outline-none min-w-[180px] w-full focus:border-primary transition-colors"
         />
@@ -156,6 +132,21 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
   const [search2, setSearch2] = useState("");
   const [sort1, setSort1] = useState<SortState>({ key: "days", dir: "desc" });
   const [sort2, setSort2] = useState<SortState>({ key: "title", dir: "asc" });
+  const [excecoesMapa, setExcecoesMapa] = useState<Record<string, ExcecaoData>>({});
+
+  // Load exceções from Supabase on mount
+  useEffect(() => {
+    lerTodasExcecoesSupabase().then(setExcecoesMapa);
+  }, []);
+
+  const handleExcecaoUpdate = useCallback((imovelId: string, campo: "excecao" | "observacao", valor: string) => {
+    setExcecoesMapa((prev) => {
+      const atual = prev[imovelId] ?? { excecao: "", observacao: "" };
+      const novo = { ...atual, [campo]: valor };
+      salvarExcecaoSupabase(imovelId, novo.excecao, novo.observacao);
+      return { ...prev, [imovelId]: novo };
+    });
+  }, []);
 
   const toggleSort = (setter: React.Dispatch<React.SetStateAction<SortState>>) => (key: string) => {
     setter((prev) =>
@@ -363,7 +354,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Validação Enxoval")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Itens faltantes atualmente")} /></td>
                     <td className="px-4 py-3 text-sm"><TruncatedCell text={getField(card, "Manutenções pendentes atualmente")} /></td>
-                    <ExcecaoRow cardTitle={card.title} />
+                    <ExcecaoRow cardTitle={card.title} excecoesMapa={excecoesMapa} onUpdate={handleExcecaoUpdate} />
                   </tr>
                 ))}
                 {filteredPipe2.length === 0 && (

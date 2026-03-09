@@ -1,6 +1,10 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadConfigFromServer } from "@/lib/pipefy";
+import { salvarDiaSupabase, DiaData } from "@/lib/supabaseData";
+
+// Re-export for consumers
+export type { DiaData } from "@/lib/supabaseData";
 
 // ── BRT date helpers ─────────────────────────────────────
 
@@ -34,36 +38,6 @@ function diasPassadosDoMes(): string[] {
     }
   }
   return dias;
-}
-
-// ── localStorage helpers ─────────────────────────────────
-
-export interface DiaData {
-  total: number;
-  imoveis: string[];
-}
-
-function jaTemDado(dataISO: string, tipo: string): boolean {
-  return localStorage.getItem(`kpi_dia_${dataISO}_${tipo}`) !== null;
-}
-
-export function salvarDia(dataISO: string, tipo: string, total: number, imoveis: string[] = []): void {
-  localStorage.setItem(`kpi_dia_${dataISO}_${tipo}`, JSON.stringify({ total, imoveis }));
-}
-
-export function lerDia(dataISO: string, tipo: string): DiaData | null {
-  const raw = localStorage.getItem(`kpi_dia_${dataISO}_${tipo}`);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    // Backward compat: old format was just a number
-    if (typeof parsed === "number") return { total: parsed, imoveis: [] };
-    return parsed;
-  } catch {
-    // Backward compat: raw string number
-    const n = Number(raw);
-    return isNaN(n) ? null : { total: n, imoveis: [] };
-  }
 }
 
 // ── Fetch cards with phases_history ──────────────────────
@@ -184,17 +158,9 @@ export function useKPIHistory() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [kpiDuration, setKpiDuration] = useState<number | null>(null);
 
-  const inicializar = useCallback(async (forceAll = false) => {
+  const inicializar = useCallback(async () => {
     const dias = diasPassadosDoMes();
-    const hoje = hojeISO();
-
-    const diasParaBuscar = dias.filter((d) => {
-      if (forceAll) return true;
-      if (d === hoje) return true;
-      return !jaTemDado(d, "ativacao");
-    });
-
-    if (diasParaBuscar.length === 0) return;
+    if (dias.length === 0) return;
 
     setLoadingKPI(true);
     setKpiDuration(null);
@@ -221,15 +187,20 @@ export function useKPIHistory() {
         }
       }
 
-      const contagemAtivacao = contarPorDia(cardsSemDuplicata, FASE_9_ID, diasParaBuscar);
-      const contagemFinalizados = contarPorDia(cardsSemDuplicata, FASE_11_ID, diasParaBuscar);
+      const contagemAtivacao = contarPorDia(cardsSemDuplicata, FASE_9_ID, dias);
+      const contagemFinalizados = contarPorDia(cardsSemDuplicata, FASE_11_ID, dias);
 
-      diasParaBuscar.forEach((dataISO) => {
+      setProgresso("Salvando no banco de dados...");
+
+      // Save all days to Supabase
+      const savePromises: Promise<void>[] = [];
+      dias.forEach((dataISO) => {
         const atv = contagemAtivacao[dataISO] ?? { total: 0, imoveis: [] };
         const fin = contagemFinalizados[dataISO] ?? { total: 0, imoveis: [] };
-        salvarDia(dataISO, "ativacao", atv.total, atv.imoveis);
-        salvarDia(dataISO, "finalizados", fin.total, fin.imoveis);
+        savePromises.push(salvarDiaSupabase(dataISO, "ativacao", atv.total, atv.imoveis));
+        savePromises.push(salvarDiaSupabase(dataISO, "finalizados", fin.total, fin.imoveis));
       });
+      await Promise.all(savePromises);
 
       setKpiDuration(Math.round((Date.now() - startTime) / 1000));
       setProgresso(null);
@@ -243,19 +214,8 @@ export function useKPIHistory() {
   }, []);
 
   const forcarAtualizacao = useCallback(() => {
-    const hoje = toBRT(new Date());
-    const ano = hoje.getUTCFullYear();
-    const mes = String(hoje.getUTCMonth() + 1).padStart(2, "0");
-    const prefixo = `kpi_dia_${ano}-${mes}`;
-
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith(prefixo))
-      .forEach((k) => localStorage.removeItem(k));
-
-    inicializar(true);
+    inicializar();
   }, [inicializar]);
-
-  // No auto-init on mount — only fetch when user clicks the button
 
   return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration };
 }
