@@ -280,10 +280,15 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         </div>
       )}
 
-      {/* Error message */}
+      {/* Duration or error message */}
       {!loadingKPI && progresso && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-destructive/30 rounded-lg text-sm text-destructive">
           {progresso}
+        </div>
+      )}
+      {!loadingKPI && !progresso && kpiDuration !== null && (
+        <div className="text-xs text-muted-foreground">
+          Atualizado em {formatDuration(kpiDuration)}
         </div>
       )}
 
