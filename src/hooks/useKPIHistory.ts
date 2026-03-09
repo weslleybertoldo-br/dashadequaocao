@@ -152,11 +152,21 @@ function contarPorDia(
 
 // ── Hook ─────────────────────────────────────────────────
 
+export interface DebugInfo {
+  cardsF9: number;
+  cardsF10: number;
+  cardsF11: number;
+  diasProcessados: number;
+  lerMesResult: { rows: number; datas: string[] };
+  erro: string | null;
+}
+
 export function useKPIHistory() {
   const [loadingKPI, setLoadingKPI] = useState(false);
   const [progresso, setProgresso] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [kpiDuration, setKpiDuration] = useState<number | null>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
   const inicializar = useCallback(async () => {
     const dias = diasPassadosDoMes();
@@ -164,8 +174,16 @@ export function useKPIHistory() {
 
     setLoadingKPI(true);
     setKpiDuration(null);
+    setDebugInfo(null);
     setProgresso("Buscando histórico do Pipefy...");
     const startTime = Date.now();
+
+    const debug: DebugInfo = {
+      cardsF9: 0, cardsF10: 0, cardsF11: 0,
+      diasProcessados: 0,
+      lerMesResult: { rows: 0, datas: [] },
+      erro: null,
+    };
 
     try {
       const config = await loadConfigFromServer();
@@ -175,6 +193,10 @@ export function useKPIHistory() {
         buscarCardsComHistorico("326702699", config.token),
         buscarCardsComHistorico("323044845", config.token),
       ]);
+
+      debug.cardsF9 = cardsF9.length;
+      debug.cardsF10 = cardsF10.length;
+      debug.cardsF11 = cardsF11.length;
 
       setProgresso("Processando dados...");
 
@@ -190,9 +212,10 @@ export function useKPIHistory() {
       const contagemAtivacao = contarPorDia(cardsSemDuplicata, FASE_9_ID, dias);
       const contagemFinalizados = contarPorDia(cardsSemDuplicata, FASE_11_ID, dias);
 
+      debug.diasProcessados = dias.length;
+
       setProgresso("Salvando no banco de dados...");
 
-      // Save all days to Supabase
       const savePromises: Promise<void>[] = [];
       dias.forEach((dataISO) => {
         const atv = contagemAtivacao[dataISO] ?? { total: 0, imoveis: [] };
@@ -202,11 +225,24 @@ export function useKPIHistory() {
       });
       await Promise.all(savePromises);
 
+      // Re-read from Supabase to verify
+      setProgresso("Verificando dados salvos...");
+      const hoje = toBRT(new Date());
+      const mapa = await lerMesSupabase(hoje.getUTCFullYear(), hoje.getUTCMonth());
+      const keys = Object.keys(mapa);
+      debug.lerMesResult = {
+        rows: keys.length,
+        datas: [...new Set(keys.map(k => k.split("_").slice(0, 3).join("-")))].sort(),
+      };
+
       setKpiDuration(Math.round((Date.now() - startTime) / 1000));
       setProgresso(null);
+      setDebugInfo(debug);
       setRefreshTrigger((p) => p + 1);
     } catch (err: any) {
       console.error("Erro ao buscar histórico Pipefy:", err);
+      debug.erro = err?.message || String(err);
+      setDebugInfo(debug);
       setProgresso("Erro ao carregar histórico.");
     } finally {
       setLoadingKPI(false);
@@ -217,5 +253,5 @@ export function useKPIHistory() {
     inicializar();
   }, [inicializar]);
 
-  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration };
+  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration, debugInfo, setDebugInfo };
 }
