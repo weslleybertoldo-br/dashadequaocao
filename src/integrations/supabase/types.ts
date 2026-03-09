@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      kpi_historico: {
+        Row: {
+          atualizado_em: string | null
+          data_iso: string
+          id: string
+          imoveis: Json
+          tipo: string
+          total: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          data_iso: string
+          id?: string
+          imoveis?: Json
+          tipo: string
+          total?: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          data_iso?: string
+          id?: string
+          imoveis?: Json
+          tipo?: string
+          total?: number
+        }
+        Relationships: []
+      }
+      pipe2_excecoes: {
+        Row: {
+          atualizado_em: string | null
+          excecao: string
+          id: string
+          imovel_id: string
+          observacao: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          excecao?: string
+          id?: string
+          imovel_id: string
+          observacao?: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          excecao?: string
+          id?: string
+          imovel_id?: string
+          observacao?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
