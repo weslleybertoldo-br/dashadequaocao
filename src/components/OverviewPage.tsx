@@ -373,6 +373,8 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
