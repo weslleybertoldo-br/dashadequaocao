@@ -77,8 +77,8 @@ const Index = () => {
 
   useEffect(() => {
     const SCHEDULES = [
-      { hour: 10, minute: 0 },
-      { hour: 18, minute: 20 },
+      { hour: 6, minute: 0 },
+      { hour: 19, minute: 0 },
     ];
 
     const getNextSchedule = () => {
