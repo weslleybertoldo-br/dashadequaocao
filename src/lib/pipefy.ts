@@ -257,7 +257,6 @@ export async function loadConfigFromServer(): Promise<PipefyConfig> {
   return {
     token: localStorage.getItem("pipefy_token") || "__USE_SERVER_TOKEN__",
     pipeId: localStorage.getItem("pipefy_pipeId") || serverConfig.pipeId || "303781436",
-    phase8: localStorage.getItem("pipefy_phase8") || serverConfig.phase8 || "323044844",
     phase9: localStorage.getItem("pipefy_phase9") || serverConfig.phase9 || "323044836",
     phase10: localStorage.getItem("pipefy_phase10") || serverConfig.phase10 || "326702699",
     phase5: localStorage.getItem("pipefy_phase5") || serverConfig.phase5 || "333848127",
