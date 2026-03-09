@@ -112,5 +112,5 @@ export function usePipefyData() {
     }
   }, [persistSnapshot]);
 
-  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration };
+  return { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotLoaded };
 }
