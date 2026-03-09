@@ -3,7 +3,7 @@ import { TodayResult } from "@/lib/pipefy";
 import { hojeISO, DiaData } from "@/hooks/useKPIHistory";
 import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import {
   Tooltip,
   TooltipContent,
