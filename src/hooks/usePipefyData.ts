@@ -145,5 +145,5 @@ export function usePipefyData() {
   const effectiveEntradas = entradasHoje ?? snapshotEntradas;
   const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
 
-  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady };
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady, snapshotStatus };
 }
