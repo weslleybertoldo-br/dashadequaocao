@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
-import { useKPIHistory, hojeISO, DiaData, DebugInfo } from "@/hooks/useKPIHistory";
-import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
-import { RefreshCw, Loader2, X } from "lucide-react";
+import { useKPIHistory, hojeISO, DiaData } from "@/hooks/useKPIHistory";
+import { lerMesSupabase, salvarDiaSupabase, lerUltimaAtualizacao } from "@/lib/supabaseData";
+import { RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -225,25 +225,24 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
 
-  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration, debugInfo, setDebugInfo } = useKPIHistory();
+  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao } = useKPIHistory();
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<string | null>(null);
 
-  // Load month data from Supabase
+  // Load month data and last update timestamp from Supabase
   useEffect(() => {
     setLoadingMes(true);
-    lerMesSupabase(ano, mes).then((mapa) => {
+    Promise.all([
+      lerMesSupabase(ano, mes),
+      lerUltimaAtualizacao(),
+    ]).then(([mapa, ts]) => {
       setDadosMes(mapa);
+      setUltimaAtualizacao(ts);
       setLoadingMes(false);
     });
   }, [ano, mes, refreshTrigger]);
-
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return m > 0 ? `${m}m ${s}s` : `${s}s`;
-  };
 
   // Auto-save today's dashboard values to Supabase
   useEffect(() => {
@@ -293,25 +292,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   return (
     <div className="space-y-8">
-      {/* Debug panel */}
-      {debugInfo && (
-        <div className="relative bg-[hsl(225,20%,8%)] border border-border rounded-lg p-4 text-xs font-mono space-y-2">
-          <button
-            onClick={() => setDebugInfo(null)}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <p className="text-primary font-bold text-sm mb-2">🔍 Debug — Última atualização</p>
-          <p>Cards buscados: <span className="text-foreground">F9={debugInfo.cardsF9} | F10={debugInfo.cardsF10} | F11={debugInfo.cardsF11}</span></p>
-          <p>Dias processados e salvos: <span className="text-foreground">{debugInfo.diasProcessados}</span></p>
-          <p>lerMesSupabase retornou: <span className="text-foreground">{debugInfo.lerMesResult.rows} linhas</span></p>
-          {debugInfo.lerMesResult.datas.length > 0 && (
-            <p className="text-muted-foreground">Datas: {debugInfo.lerMesResult.datas.join(", ")}</p>
-          )}
-          {debugInfo.erro && (
-            <p className="text-destructive">Erro: {debugInfo.erro}</p>
-          )}
+      {/* Last update timestamp */}
+      {ultimaAtualizacao && !loadingKPI && (
+        <div className="text-xs text-muted-foreground">
+          Atualizado em{" "}
+          {new Date(ultimaAtualizacao).toLocaleString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            timeZone: "America/Sao_Paulo",
+          }).replace(",", " ·")}
         </div>
       )}
 
@@ -323,15 +315,10 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         </div>
       )}
 
-      {/* Duration or error message */}
+      {/* Error message */}
       {!loadingKPI && progresso && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-destructive/30 rounded-lg text-sm text-destructive">
           {progresso}
-        </div>
-      )}
-      {!loadingKPI && !progresso && kpiDuration !== null && (
-        <div className="text-xs text-muted-foreground">
-          Atualizado em {formatDuration(kpiDuration)}
         </div>
       )}
 

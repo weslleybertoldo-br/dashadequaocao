@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      dashboard_settings: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          valor: string
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          valor: string
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       kpi_historico: {
         Row: {
           atualizado_em: string | null
