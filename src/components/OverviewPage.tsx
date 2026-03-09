@@ -37,7 +37,7 @@ function ExcecaoRow({
       <td className="px-4 py-3 text-sm">
         <select
           value={dados.excecao}
-          onChange={(e) => handleExcecao(e.target.value)}
+          onChange={(e) => onUpdate(cardTitle, "excecao", e.target.value)}
           className={`${selectBg} ${selectText} border border-border rounded-md px-2 py-1 text-xs cursor-pointer outline-none min-w-[140px]`}
         >
           <option value="">— Selecionar —</option>
@@ -49,7 +49,7 @@ function ExcecaoRow({
         <input
           type="text"
           value={dados.observacao}
-          onChange={(e) => handleObservacao(e.target.value)}
+          onChange={(e) => onUpdate(cardTitle, "observacao", e.target.value)}
           placeholder="Observação..."
           className="bg-secondary border border-border rounded-md px-2.5 py-1 text-xs text-foreground outline-none min-w-[180px] w-full focus:border-primary transition-colors"
         />
