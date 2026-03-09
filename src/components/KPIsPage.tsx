@@ -266,17 +266,24 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     });
   }, [ano, mes, refreshTrigger]);
 
-  // Reflect live dashboard values in the local table state (already saved by usePipefyData)
+  // Reflect live dashboard values independently — each updates as soon as available
   useEffect(() => {
-    if (entradasHoje === null || concluidosHoje === null) return;
+    if (entradasHoje === null) return;
     const hojeStr = hojeISO();
-
     setDadosMes((prev) => ({
       ...prev,
       [`${hojeStr}_ativacao`]: { total: entradasHoje.count, imoveis: entradasHoje.titles },
+    }));
+  }, [entradasHoje]);
+
+  useEffect(() => {
+    if (concluidosHoje === null) return;
+    const hojeStr = hojeISO();
+    setDadosMes((prev) => ({
+      ...prev,
       [`${hojeStr}_finalizados`]: { total: concluidosHoje.count, imoveis: concluidosHoje.titles },
     }));
-  }, [entradasHoje, concluidosHoje]);
+  }, [concluidosHoje]);
 
   // Handle manual cell edit
   const handleSaveCell = useCallback(
