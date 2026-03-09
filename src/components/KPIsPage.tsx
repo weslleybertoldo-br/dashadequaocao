@@ -139,12 +139,14 @@ function KPITable({
   semanas,
   dadosMes,
   onSaveCell,
+  showMetaColumns = true,
 }: {
   title: string;
   tipo: string;
   semanas: Date[][];
   dadosMes: Record<string, DiaData>;
   onSaveCell: (dataISO: string, tipo: string, value: number, imoveis: string[]) => void;
+  showMetaColumns?: boolean;
 }) {
   return (
     <div>
@@ -200,25 +202,34 @@ function KPITable({
                     style={{ background: "hsl(225 20% 11%)" }}
                   >
                     <div className="text-[11px] text-muted-foreground mb-0.5">TOTAL</div>
-                    <span className="font-mono text-base font-bold text-foreground">{weekTotal}</span>
+                    <span
+                      className="font-mono font-bold"
+                      style={!showMetaColumns ? { fontSize: "1.25rem", color: "#06b6d4" } : { fontSize: "1rem" }}
+                    >
+                      {weekTotal}
+                    </span>
                   </td>
 
-                  <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">META</div>
-                    <span className="font-mono text-base text-muted-foreground">{META_SEMANAL}</span>
-                  </td>
+                  {showMetaColumns && (
+                    <>
+                      <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
+                        <div className="text-[11px] text-muted-foreground mb-0.5">META</div>
+                        <span className="font-mono text-base text-muted-foreground">{META_SEMANAL}</span>
+                      </td>
 
-                  <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
-                    {(() => {
-                      const faltam = Math.max(0, META_SEMANAL - weekTotal);
-                      return (
-                        <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
-                          {faltam === 0 ? "✓" : faltam}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                      <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
+                        <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
+                        {(() => {
+                          const faltam = Math.max(0, META_SEMANAL - weekTotal);
+                          return (
+                            <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
+                              {faltam === 0 ? "✓" : faltam}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
@@ -283,21 +294,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   );
 
   // Compute month totals
-  const { totalAtivacao, totalFinalizados } = useMemo(() => {
+  const totalAtivacao = useMemo(() => {
     let tA = 0;
-    let tF = 0;
     semanas.forEach((semana) => {
       semana.forEach((dia) => {
         const dataISO = toDateISO(dia);
         tA += dadosMes[`${dataISO}_ativacao`]?.total ?? 0;
-        tF += dadosMes[`${dataISO}_finalizados`]?.total ?? 0;
       });
     });
-    return { totalAtivacao: tA, totalFinalizados: tF };
+    return tA;
   }, [semanas, dadosMes]);
 
   const pctAtivacao = Math.round((totalAtivacao / META_MENSAL) * 100);
-  const pctFinalizados = Math.round((totalFinalizados / META_MENSAL) * 100);
 
   const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -351,21 +359,13 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Total Ativações (mês)</p>
           <p className={`text-2xl font-mono font-bold ${getPercentColor(pctAtivacao)}`}>{totalAtivacao}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Meta Mensal Ativação</p>
-          <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total Finalizados (mês)</p>
-          <p className={`text-2xl font-mono font-bold ${getPercentColor(pctFinalizados)}`}>{totalFinalizados}</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Meta Mensal Finalizados</p>
           <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
         </div>
       </div>
@@ -386,6 +386,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         semanas={semanas}
         dadosMes={dadosMes}
         onSaveCell={handleSaveCell}
+        showMetaColumns={false}
       />
     </div>
   );
