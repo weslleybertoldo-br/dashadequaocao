@@ -50,9 +50,19 @@ export function usePipefyData() {
     snapshotPromiseRef.current = promise;
   }, []);
 
-  const persistSnapshot = useCallback((ativos: TodayResult, finalizados: TodayResult) => {
-    salvarSnapshotHoje("ativos_hoje", ativos.count, ativos.titles);
-    salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles);
+  const persistSnapshot = useCallback(async (ativos: TodayResult, finalizados: TodayResult) => {
+    const [r1, r2] = await Promise.all([
+      salvarSnapshotHoje("ativos_hoje", ativos.count, ativos.titles),
+      salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles),
+    ]);
+    if (r1.success && r2.success) {
+      setSnapshotStatus({ success: true, savedAt: r1.savedAt });
+      console.log("Snapshots salvos:", { ativos: ativos.count, finalizados: finalizados.count });
+    } else {
+      const errMsg = r1.error || r2.error || "Erro desconhecido";
+      setSnapshotStatus({ success: false, error: errMsg });
+      console.error("Falha ao salvar snapshots:", errMsg);
+    }
   }, []);
 
   const fetchData = useCallback(async () => {
