@@ -54,6 +54,12 @@ function toDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function getFaltamColor(faltam: number) {
+  if (faltam === 0) return "text-success";
+  if (faltam <= 15) return "text-warning";
+  return "text-destructive";
+}
+
 function getPercentColor(pct: number) {
   if (pct >= 100) return "text-success";
   if (pct >= 70) return "text-warning";
@@ -203,10 +209,15 @@ function KPITable({
                   </td>
 
                   <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">%</div>
-                    <span className={`font-mono text-base font-bold ${getPercentColor(pct)}`}>
-                      {pct}%
-                    </span>
+                    <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
+                    {(() => {
+                      const faltam = Math.max(0, META_SEMANAL - weekTotal);
+                      return (
+                        <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
+                          {faltam === 0 ? "✓" : faltam}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               );
