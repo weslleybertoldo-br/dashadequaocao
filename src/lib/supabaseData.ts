@@ -33,12 +33,16 @@ export async function lerMesSupabase(
   mes: number
 ): Promise<Record<string, DiaData>> {
   const mesStr = String(mes + 1).padStart(2, "0");
-  const prefixo = `${ano}-${mesStr}`;
+  const inicioMes = `${ano}-${mesStr}-01`;
+  const proximoMes = mes + 1 > 11
+    ? `${ano + 1}-01-01`
+    : `${ano}-${String(mes + 2).padStart(2, "0")}-01`;
 
   const { data, error } = await supabase
     .from("kpi_historico")
     .select("data_iso, tipo, total, imoveis")
-    .like("data_iso", `${prefixo}%`);
+    .gte("data_iso", inicioMes)
+    .lt("data_iso", proximoMes);
 
   console.log("[lerMesSupabase]", prefixo, "→", data?.length ?? 0, "rows", error ?? "OK");
 
