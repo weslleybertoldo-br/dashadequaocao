@@ -96,6 +96,10 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(() => {
+          // Fallback: use phase10-only count
+          const finalizadosFallback = countFinalizadosHoje(phase10Cards);
+          setConcluidosHoje(finalizadosFallback);
+          persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {
