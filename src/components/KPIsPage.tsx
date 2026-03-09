@@ -227,7 +227,13 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
 
-  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao } = useKPIHistory();
+  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration } = useKPIHistory();
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
 
   // Auto-save today's dashboard values when they update
   useEffect(() => {
