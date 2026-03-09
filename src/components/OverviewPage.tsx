@@ -274,6 +274,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
               ) : (
                 <p className="text-2xl font-mono font-bold text-foreground">{concluidosHoje?.count ?? "—"}</p>
               )}
+            </div>
           </div>
 
           {/* Snapshot save status */}
