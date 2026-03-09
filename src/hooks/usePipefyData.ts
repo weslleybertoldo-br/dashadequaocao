@@ -15,6 +15,12 @@ interface PipefyData {
   phase5Cards: PipefyCard[];
 }
 
+export interface SnapshotDebug {
+  queryMs: number;
+  rows: Record<string, { valor: number; imoveis: string[] }>;
+  stateUpdated: boolean;
+}
+
 export function usePipefyData() {
   const [data, setData] = useState<PipefyData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,23 +31,29 @@ export function usePipefyData() {
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
+  const [snapshotDebug, setSnapshotDebug] = useState<SnapshotDebug | null>(null);
 
   // Load cached snapshots on mount — runs before any Pipefy fetch
   useEffect(() => {
+    const t0 = performance.now();
     lerSnapshotsHoje().then((snap) => {
+      const elapsed = Math.round(performance.now() - t0);
+      console.log("[snapshot] query took", elapsed, "ms, result:", snap);
+
+      let updated = false;
       setEntradasHoje((prev) => {
-        if (prev) return prev; // fresh data already arrived
-        return snap["ativos_hoje"]
-          ? { count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis }
-          : null;
+        if (prev) return prev;
+        if (snap["ativos_hoje"]) { updated = true; return { count: snap["ativos_hoje"].valor, titles: snap["ativos_hoje"].imoveis }; }
+        return null;
       });
       setConcluidosHoje((prev) => {
         if (prev) return prev;
-        return snap["finalizados_hoje"]
-          ? { count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis }
-          : null;
+        if (snap["finalizados_hoje"]) { updated = true; return { count: snap["finalizados_hoje"].valor, titles: snap["finalizados_hoje"].imoveis }; }
+        return null;
       });
       setSnapshotLoaded(true);
+      setSnapshotDebug({ queryMs: elapsed, rows: snap, stateUpdated: updated });
+      console.log("[snapshot] stateUpdated:", updated);
     });
   }, []);
 
