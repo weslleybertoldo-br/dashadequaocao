@@ -240,6 +240,10 @@ const Index = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="kpis">
+            <KPIsPage entradasHoje={entradasHoje} concluidosHoje={concluidosHoje} />
+          </TabsContent>
+
           {hiddenUnlocked && (
             <TabsContent value="no-adequacao">
               {loading && (
