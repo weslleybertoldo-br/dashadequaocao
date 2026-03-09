@@ -3,6 +3,7 @@ import {
   PipefyCard,
   TodayResult,
   fetchAllCardsForPhase,
+  fetchCardsUpdatedSince,
   countAtivosHoje,
   countFinalizadosHoje,
   loadConfigFromServer,
