@@ -247,11 +247,9 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
 
-  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao } = useKPIHistory();
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
-  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<string | null>(null);
 
   // Load month data and last update timestamp from Supabase
   useEffect(() => {
