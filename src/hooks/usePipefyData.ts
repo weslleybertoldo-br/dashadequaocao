@@ -8,7 +8,7 @@ import {
   countFinalizadosHoje,
   loadConfigFromServer,
 } from "@/lib/pipefy";
-import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
+import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao, SnapshotSaveResult } from "@/lib/supabaseData";
 import { hojeISO } from "@/hooks/useKPIHistory";
 
 interface PipefyData {
@@ -29,6 +29,7 @@ export function usePipefyData() {
   const [todayLoading, setTodayLoading] = useState(false);
   const [stage2Loading, setStage2Loading] = useState(false);
   const [stage2Duration, setStage2Duration] = useState<number | null>(null);
+  const [snapshotStatus, setSnapshotStatus] = useState<{ success: boolean; savedAt?: string; error?: string } | null>(null);
 
   // Track whether snapshots have been loaded — Pipefy fetch waits for this
   const snapshotLoadedRef = useRef(false);
@@ -49,9 +50,19 @@ export function usePipefyData() {
     snapshotPromiseRef.current = promise;
   }, []);
 
-  const persistSnapshot = useCallback((ativos: TodayResult, finalizados: TodayResult) => {
-    salvarSnapshotHoje("ativos_hoje", ativos.count, ativos.titles);
-    salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles);
+  const persistSnapshot = useCallback(async (ativos: TodayResult, finalizados: TodayResult) => {
+    const [r1, r2] = await Promise.all([
+      salvarSnapshotHoje("ativos_hoje", ativos.count, ativos.titles),
+      salvarSnapshotHoje("finalizados_hoje", finalizados.count, finalizados.titles),
+    ]);
+    if (r1.success && r2.success) {
+      setSnapshotStatus({ success: true, savedAt: r1.savedAt });
+      console.log("Snapshots salvos:", { ativos: ativos.count, finalizados: finalizados.count });
+    } else {
+      const errMsg = r1.error || r2.error || "Erro desconhecido";
+      setSnapshotStatus({ success: false, error: errMsg });
+      console.error("Falha ao salvar snapshots:", errMsg);
+    }
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -93,7 +104,7 @@ export function usePipefyData() {
       const todayStart = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}T00:00:00-03:00`;
 
       fetchCardsUpdatedSince(config.token, config.pipeId, todayStart)
-        .then((recentCards) => {
+        .then(async (recentCards) => {
           // Merge stage1 + recently updated cards (includes phase 11 cards updated today)
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...recentCards]) {
@@ -106,7 +117,7 @@ export function usePipefyData() {
           const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
-          persistSnapshot(ativosFinal, finalizadosFinal);
+          await persistSnapshot(ativosFinal, finalizadosFinal);
 
           // Auto-save today's KPI to kpi_historico
           const hojeStr = hojeISO();
@@ -117,10 +128,10 @@ export function usePipefyData() {
           setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
           setStage2Loading(false);
         })
-        .catch(() => {
+        .catch(async () => {
           const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
-          persistSnapshot(ativos, finalizadosFallback);
+          await persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {
@@ -134,5 +145,5 @@ export function usePipefyData() {
   const effectiveEntradas = entradasHoje ?? snapshotEntradas;
   const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
 
-  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady };
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady, snapshotStatus };
 }

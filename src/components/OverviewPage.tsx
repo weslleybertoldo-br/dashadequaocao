@@ -68,6 +68,7 @@ interface OverviewPageProps {
   stage2Loading: boolean;
   stage2Duration: number | null;
   tablesLoading?: boolean;
+  snapshotStatus?: { success: boolean; savedAt?: string; error?: string } | null;
 }
 
 
@@ -126,7 +127,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, tablesLoading }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, tablesLoading, snapshotStatus }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -275,6 +276,21 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
               )}
             </div>
           </div>
+
+          {/* Snapshot save status */}
+          {snapshotStatus && (
+            <div className="h-4 flex items-center">
+              {snapshotStatus.success ? (
+                <span className="text-[11px] text-muted-foreground">
+                  💾 Salvo às {new Date(snapshotStatus.savedAt!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              ) : (
+                <span className="text-[11px] text-destructive">
+                  ⚠️ Erro ao salvar: {snapshotStatus.error}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
