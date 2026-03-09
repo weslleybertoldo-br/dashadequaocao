@@ -171,6 +171,7 @@ export function countFinalizadosHoje(cards: PipefyCard[]): TodayResult {
 
 export interface PipefyConfig {
   token: string;
+  pipeId: string;
   phase8: string;
   phase9: string;
   phase10: string;
