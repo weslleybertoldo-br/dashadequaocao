@@ -90,8 +90,6 @@ export function usePipefyData() {
       setLoading(false);
 
       const stage1Cards = [...phase9Cards, ...phase10Cards];
-      const ativos = countAtivosHoje(stage1Cards, config.phase9);
-      setEntradasHoje(ativos);
 
       // ── STAGE 2 (optimized): fetch only cards updated today ──
       setStage2Loading(true);
