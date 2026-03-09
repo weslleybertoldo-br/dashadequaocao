@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
+import { useKPIHistory, lerDia } from "@/hooks/useKPIHistory";
+import { RefreshCw, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface KPIsPageProps {
   entradasHoje: TodayResult | null;
@@ -38,8 +41,11 @@ function formatarData(date: Date) {
   return `${d}/${m}`;
 }
 
-function chaveStorage(tipo: string, ano: number, mes: number) {
-  return `kpi_${tipo}_${ano}_${mes}`;
+function toDateISO(date: Date): string {
+  const d = String(date.getDate()).padStart(2, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getFullYear();
+  return `${y}-${m}-${d}`;
 }
 
 function getPercentColor(pct: number) {
@@ -52,7 +58,7 @@ function EditableCell({
   value,
   onSave,
 }: {
-  value: number | undefined;
+  value: number | null;
   onSave: (v: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -92,7 +98,7 @@ function EditableCell({
         setEditing(true);
       }}
     >
-      {value ?? "—"}
+      {value !== null ? value : "—"}
     </span>
   );
 }
@@ -101,64 +107,46 @@ function KPITable({
   title,
   tipo,
   semanas,
-  ano,
-  mes,
-  todayValue,
+  refreshTrigger,
 }: {
   title: string;
   tipo: string;
   semanas: Date[][];
-  ano: number;
-  mes: number;
-  todayValue: number | null;
+  refreshTrigger: number;
 }) {
-  const storageKey = chaveStorage(tipo, ano, mes);
-  const [dados, setDados] = useState<Record<string, number>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey) || "{}");
-    } catch {
-      return {};
-    }
-  });
+  // Read all values from per-day localStorage keys
+  const [dados, setDados] = useState<Record<string, number | null>>({});
 
-  // Auto-save today's value
+  // Load from per-day keys whenever refreshTrigger changes
   useEffect(() => {
-    if (todayValue === null || todayValue === undefined) return;
-    const hojeStr = new Date().toDateString();
+    const newDados: Record<string, number | null> = {};
     semanas.forEach((semana, sIdx) => {
       semana.forEach((dia, dIdx) => {
-        if (dia.toDateString() === hojeStr) {
-          const key = `sem${sIdx + 1}_dia${dIdx}`;
-          setDados((prev) => {
-            const next = { ...prev, [key]: todayValue };
-            localStorage.setItem(storageKey, JSON.stringify(next));
-            return next;
-          });
-        }
+        const key = `sem${sIdx + 1}_dia${dIdx}`;
+        const dataISO = toDateISO(dia);
+        newDados[key] = lerDia(dataISO, tipo);
       });
     });
-  }, [todayValue, semanas, storageKey]);
+    setDados(newDados);
+  }, [semanas, tipo, refreshTrigger]);
 
   const handleSave = useCallback(
-    (key: string, value: number) => {
-      setDados((prev) => {
-        const next = { ...prev, [key]: value };
-        localStorage.setItem(storageKey, JSON.stringify(next));
-        return next;
-      });
+    (cellKey: string, dia: Date, value: number) => {
+      const dataISO = toDateISO(dia);
+      localStorage.setItem(`kpi_dia_${dataISO}_${tipo}`, String(value));
+      setDados((prev) => ({ ...prev, [cellKey]: value }));
     },
-    [storageKey]
+    [tipo]
   );
 
   const totalMes = useMemo(() => {
-    return Object.values(dados).reduce((s, v) => s + (v || 0), 0);
+    return Object.values(dados).reduce((s: number, v) => s + (v ?? 0), 0);
   }, [dados]);
 
   const pctMes = META_MENSAL > 0 ? Math.round((totalMes / META_MENSAL) * 100) : 0;
 
   return (
     <div>
-      {/* Section header */}
       <div className="mb-3 border-b border-primary/40 pb-2">
         <h3 className="font-display font-bold text-sm uppercase tracking-widest text-foreground">
           {title}
@@ -170,23 +158,20 @@ function KPITable({
           <tbody>
             {semanas.map((semana, sIdx) => {
               const weekTotal = semana.reduce(
-                (s, _, dIdx) => s + (dados[`sem${sIdx + 1}_dia${dIdx}`] || 0),
+                (s, _, dIdx) => s + (dados[`sem${sIdx + 1}_dia${dIdx}`] ?? 0),
                 0
               );
               const pct = META_SEMANAL > 0 ? Math.round((weekTotal / META_SEMANAL) * 100) : 0;
 
               return (
                 <tr key={sIdx} className="group">
-                  {/* Week label */}
                   <td
                     className="px-3 py-2 text-xs font-display font-bold text-muted-foreground whitespace-nowrap"
                     style={{ background: "hsl(225 15% 5%)" }}
-                    rowSpan={1}
                   >
                     SEM {sIdx + 1}
                   </td>
 
-                  {/* Day columns - date header + value in same row using flex */}
                   {semana.map((dia, dIdx) => {
                     const key = `sem${sIdx + 1}_dia${dIdx}`;
                     return (
@@ -199,14 +184,13 @@ function KPITable({
                           {DIAS_LABEL[dIdx]} {formatarData(dia)}
                         </div>
                         <EditableCell
-                          value={dados[key]}
-                          onSave={(v) => handleSave(key, v)}
+                          value={dados[key] ?? null}
+                          onSave={(v) => handleSave(key, dia, v)}
                         />
                       </td>
                     );
                   })}
 
-                  {/* TOTAL */}
                   <td
                     className="px-3 py-2 text-center"
                     style={{ background: "hsl(225 20% 11%)" }}
@@ -215,13 +199,11 @@ function KPITable({
                     <span className="font-mono text-base font-bold text-foreground">{weekTotal}</span>
                   </td>
 
-                  {/* META */}
                   <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
                     <div className="text-[11px] text-muted-foreground mb-0.5">META</div>
                     <span className="font-mono text-base text-muted-foreground">{META_SEMANAL}</span>
                   </td>
 
-                  {/* % */}
                   <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
                     <div className="text-[11px] text-muted-foreground mb-0.5">%</div>
                     <span className={`font-mono text-base font-bold ${getPercentColor(pct)}`}>
@@ -245,21 +227,38 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
 
-  // Compute month totals from localStorage
-  const ativacaoData = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem(chaveStorage("ativacao", ano, mes)) || "{}");
-    } catch { return {}; }
-  }, [ano, mes, entradasHoje]);
+  const { loadingKPI, progresso, refreshTrigger, forcarAtualizacao } = useKPIHistory();
 
-  const finalizadosData = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem(chaveStorage("finalizados", ano, mes)) || "{}");
-    } catch { return {}; }
-  }, [ano, mes, concluidosHoje]);
+  // Auto-save today's dashboard values when they update
+  useEffect(() => {
+    if (entradasHoje === null || concluidosHoje === null) return;
+    const hojeStr = hoje.toDateString();
+    semanas.forEach((semana) => {
+      semana.forEach((dia) => {
+        if (dia.toDateString() === hojeStr) {
+          const dataISO = toDateISO(dia);
+          localStorage.setItem(`kpi_dia_${dataISO}_ativacao`, String(entradasHoje.count));
+          localStorage.setItem(`kpi_dia_${dataISO}_finalizados`, String(concluidosHoje.count));
+        }
+      });
+    });
+  }, [entradasHoje, concluidosHoje, semanas]);
 
-  const totalAtivacao = Object.values(ativacaoData).reduce((s: number, v: any) => s + (v || 0), 0) as number;
-  const totalFinalizados = Object.values(finalizadosData).reduce((s: number, v: any) => s + (v || 0), 0) as number;
+  // Compute month totals from per-day localStorage keys
+  const { totalAtivacao, totalFinalizados } = useMemo(() => {
+    let tA = 0;
+    let tF = 0;
+    semanas.forEach((semana) => {
+      semana.forEach((dia) => {
+        const dataISO = toDateISO(dia);
+        tA += lerDia(dataISO, "ativacao") ?? 0;
+        tF += lerDia(dataISO, "finalizados") ?? 0;
+      });
+    });
+    return { totalAtivacao: tA, totalFinalizados: tF };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semanas, refreshTrigger, entradasHoje, concluidosHoje]);
+
   const pctAtivacao = Math.round((totalAtivacao / META_MENSAL) * 100);
   const pctFinalizados = Math.round((totalFinalizados / META_MENSAL) * 100);
 
@@ -267,10 +266,37 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   return (
     <div className="space-y-8">
-      {/* Month label */}
-      <p className="text-xs text-muted-foreground font-display uppercase tracking-widest">
-        {MESES[mes]} {ano}
-      </p>
+      {/* Loading indicator */}
+      {loadingKPI && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          {progresso || "Carregando histórico..."}
+        </div>
+      )}
+
+      {/* Error message */}
+      {!loadingKPI && progresso && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-destructive/30 rounded-lg text-sm text-destructive">
+          {progresso}
+        </div>
+      )}
+
+      {/* Month label + refresh button */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground font-display uppercase tracking-widest">
+          {MESES[mes]} {ano}
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={forcarAtualizacao}
+          disabled={loadingKPI}
+          className="gap-2 text-muted-foreground hover:text-foreground text-xs"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loadingKPI ? "animate-spin" : ""}`} />
+          Atualizar histórico
+        </Button>
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -297,9 +323,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         title="Ativação"
         tipo="ativacao"
         semanas={semanas}
-        ano={ano}
-        mes={mes}
-        todayValue={entradasHoje?.count ?? null}
+        refreshTrigger={refreshTrigger}
       />
 
       {/* Finalizados table */}
@@ -307,9 +331,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         title="Finalizados"
         tipo="finalizados"
         semanas={semanas}
-        ano={ano}
-        mes={mes}
-        todayValue={concluidosHoje?.count ?? null}
+        refreshTrigger={refreshTrigger}
       />
     </div>
   );
