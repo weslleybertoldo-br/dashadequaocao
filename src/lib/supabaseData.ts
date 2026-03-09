@@ -106,6 +106,32 @@ export async function lerTodasExcecoesSupabase(): Promise<
   return mapa;
 }
 
+// ── Dashboard Settings ───────────────────────────────────
+
+export async function salvarUltimaAtualizacao(): Promise<void> {
+  const agora = new Date().toISOString();
+  const { error } = await supabase
+    .from("dashboard_settings")
+    .upsert(
+      { chave: "kpi_ultima_atualizacao", valor: agora, atualizado_em: agora },
+      { onConflict: "chave" }
+    );
+  if (error) console.error("Erro ao salvar última atualização:", error);
+}
+
+export async function lerUltimaAtualizacao(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("dashboard_settings")
+    .select("valor")
+    .eq("chave", "kpi_ultima_atualizacao")
+    .maybeSingle();
+  if (error) {
+    console.error("Erro ao ler última atualização:", error);
+    return null;
+  }
+  return data?.valor ?? null;
+}
+
 // ── Migração localStorage → Supabase ─────────────────────
 
 export async function migrarLocalStorageParaSupabase(): Promise<void> {
@@ -119,7 +145,6 @@ export async function migrarLocalStorageParaSupabase(): Promise<void> {
     const raw = localStorage.getItem(chave);
     if (!raw) continue;
     const partes = chave.replace("kpi_dia_", "");
-    // formato: 2026-03-09_ativacao
     const lastUnderscore = partes.lastIndexOf("_");
     if (lastUnderscore === -1) continue;
     const dataISO = partes.substring(0, lastUnderscore);

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loadConfigFromServer } from "@/lib/pipefy";
-import { salvarDiaSupabase, lerMesSupabase, DiaData } from "@/lib/supabaseData";
+import { salvarDiaSupabase, lerMesSupabase, salvarUltimaAtualizacao, DiaData } from "@/lib/supabaseData";
 
 // Re-export for consumers
 export type { DiaData } from "@/lib/supabaseData";
