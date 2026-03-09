@@ -1,11 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface PhaseHistoryEntry {
+  phase: { id: string };
+  firstTimeIn: string;
+}
+
 export interface PipefyCard {
   id: string;
   title: string;
   current_phase: { name: string };
   current_phase_age: number;
   fields: { name: string; value: string; updated_at?: string }[];
+  phases_history: PhaseHistoryEntry[];
 }
 
 interface PageInfo {
