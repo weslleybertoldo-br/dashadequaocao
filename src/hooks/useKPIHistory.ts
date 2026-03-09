@@ -161,6 +161,7 @@ export function useKPIHistory() {
   const [loadingKPI, setLoadingKPI] = useState(false);
   const [progresso, setProgresso] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [kpiDuration, setKpiDuration] = useState<number | null>(null);
 
   const inicializar = useCallback(async (forceAll = false) => {
     const dias = diasPassadosDoMes();
@@ -175,7 +176,9 @@ export function useKPIHistory() {
     if (diasParaBuscar.length === 0) return;
 
     setLoadingKPI(true);
+    setKpiDuration(null);
     setProgresso("Buscando histórico do Pipefy...");
+    const startTime = Date.now();
 
     try {
       const config = await loadConfigFromServer();
@@ -205,6 +208,7 @@ export function useKPIHistory() {
         salvarDia(dataISO, "finalizados", contagemFinalizados[dataISO] ?? 0);
       });
 
+      setKpiDuration(Math.round((Date.now() - startTime) / 1000));
       setProgresso(null);
       setRefreshTrigger((p) => p + 1);
     } catch (err: any) {
@@ -232,5 +236,5 @@ export function useKPIHistory() {
     inicializar();
   }, [inicializar]);
 
-  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao };
+  return { loadingKPI, progresso, refreshTrigger, forcarAtualizacao, kpiDuration };
 }
