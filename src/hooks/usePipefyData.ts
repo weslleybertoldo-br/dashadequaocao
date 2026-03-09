@@ -80,7 +80,7 @@ export function usePipefyData() {
       setLoading(false);
 
       const stage1Cards = [...phase8Cards, ...phase9Cards, ...phase10Cards];
-      const ativos = countAtivosHoje(stage1Cards);
+      const ativos = countAtivosHoje(stage1Cards, config.phase9);
       setEntradasHoje(ativos);
 
       // ── STAGE 2 (optimized): fetch only cards updated today ──
@@ -99,15 +99,11 @@ export function usePipefyData() {
           for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
           }
-          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()));
+          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()), config.phase9);
           setEntradasHoje(ativosFinal);
 
-          // For finalizados: phase10 + recently updated cards
-          const finalizadosMap = new Map<string, PipefyCard>();
-          for (const card of [...phase10Cards, ...recentCards]) {
-            finalizadosMap.set(card.id, card);
-          }
-          const finalizadosFinal = countFinalizadosHoje(Array.from(finalizadosMap.values()));
+          // For finalizados: all cards updated today (includes phase 11 entries)
+          const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
           persistSnapshot(ativosFinal, finalizadosFinal);
@@ -122,7 +118,7 @@ export function usePipefyData() {
           setStage2Loading(false);
         })
         .catch(() => {
-          const finalizadosFallback = countFinalizadosHoje(phase10Cards);
+          const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
           persistSnapshot(ativos, finalizadosFallback);
           setStage2Loading(false);

@@ -1,11 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface PhaseHistoryEntry {
+  phase: { id: string };
+  firstTimeIn: string;
+}
+
 export interface PipefyCard {
   id: string;
   title: string;
   current_phase: { name: string };
   current_phase_age: number;
   fields: { name: string; value: string; updated_at?: string }[];
+  phases_history: PhaseHistoryEntry[];
 }
 
 interface PageInfo {
@@ -42,7 +48,7 @@ export async function fetchAllCardsForPhase(
   while (hasNextPage && page < maxPages) {
     page++;
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } } } } } }`;
+    const query = `{ phase(id: ${phaseId}) { cards(first: 50${afterClause}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } phases_history { phase { id } firstTimeIn } } } } } }`;
 
     let lastError: Error | null = null;
     let responseData: any = null;
@@ -115,7 +121,7 @@ export async function fetchCardsUpdatedSince(
   while (hasNextPage && page < maxPages) {
     page++;
     const afterClause = cursor ? `, after: "${cursor}"` : "";
-    const query = `{ allCards(pipeId: ${pipeId}, first: 50${afterClause}, filter: {field: "updated_at", operator: gte, value: "${sinceISO}"}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } } } } }`;
+    const query = `{ allCards(pipeId: ${pipeId}, first: 50${afterClause}, filter: {field: "updated_at", operator: gte, value: "${sinceISO}"}) { pageInfo { hasNextPage endCursor } edges { node { id title current_phase { name } current_phase_age fields { name value updated_at } phases_history { phase { id } firstTimeIn } } } } }`;
 
     let lastError: Error | null = null;
     let responseData: any = null;
@@ -191,30 +197,23 @@ function todayBRTKey(): string {
   return toBRTDateKey(new Date());
 }
 
-function todayBRTDDMMYYYY(): string {
-  const brt = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
-  return `${String(brt.getUTCDate()).padStart(2, "0")}/${String(brt.getUTCMonth() + 1).padStart(2, "0")}/${brt.getUTCFullYear()}`;
+
+// ── Phase history helpers ────────────────────────────────
+// Card "ativo hoje" = entered Phase 9 for the first time today (BRT)
+// Card "finalizado hoje" = entered Phase 11 for the first time today (BRT)
+
+function enteredPhaseTodayBRT(card: PipefyCard, phaseId: string): boolean {
+  const entry = card.phases_history?.find((h) => String(h.phase.id) === String(phaseId));
+  if (!entry?.firstTimeIn) return false;
+  return toBRTDateKey(new Date(entry.firstTimeIn)) === todayBRTKey();
 }
 
-// ── "Ativos hoje" ────────────────────────────────────────
-// Card is "ativo hoje" if the field "Enviar mensagem de aviso de imóvel ativado"
-// has updated_at with today's date in BRT (UTC-3).
-
-export function getAtivoHoje(card: PipefyCard): boolean {
-  const field = card.fields.find((f) => f.name === "Enviar mensagem de aviso de imóvel ativado");
-  if (!field?.updated_at) return false;
-  const updatedKey = toBRTDateKey(new Date(field.updated_at));
-  return updatedKey === todayBRTKey();
+export function getAtivoHoje(card: PipefyCard, phase9Id: string): boolean {
+  return enteredPhaseTodayBRT(card, phase9Id);
 }
 
-// ── "Finalizados hoje" ──────────────────────────────────
-// Card is "finalizado hoje" if the field "Implantação Finalizada"
-// has value equal to today's date in DD/MM/YYYY format.
-
-export function getFinalizadoHoje(card: PipefyCard): boolean {
-  const field = card.fields.find((f) => f.name === "Implantação Finalizada");
-  if (!field?.value) return false;
-  return field.value.trim() === todayBRTDDMMYYYY();
+export function getFinalizadoHoje(card: PipefyCard, phase11Id: string): boolean {
+  return enteredPhaseTodayBRT(card, phase11Id);
 }
 
 // ── Today result type ────────────────────────────────────
@@ -224,18 +223,18 @@ export interface TodayResult {
   titles: string[];
 }
 
-export function countAtivosHoje(cards: PipefyCard[]): TodayResult {
+export function countAtivosHoje(cards: PipefyCard[], phase9Id: string): TodayResult {
   const titles: string[] = [];
   for (const card of cards) {
-    if (getAtivoHoje(card)) titles.push(card.title);
+    if (getAtivoHoje(card, phase9Id)) titles.push(card.title);
   }
   return { count: titles.length, titles };
 }
 
-export function countFinalizadosHoje(cards: PipefyCard[]): TodayResult {
+export function countFinalizadosHoje(cards: PipefyCard[], phase11Id: string): TodayResult {
   const titles: string[] = [];
   for (const card of cards) {
-    if (getFinalizadoHoje(card)) titles.push(card.title);
+    if (getFinalizadoHoje(card, phase11Id)) titles.push(card.title);
   }
   return { count: titles.length, titles };
 }
