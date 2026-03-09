@@ -293,8 +293,28 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   return (
     <div className="space-y-8">
-      {/* Loading indicator */}
-      {(loadingKPI || loadingMes) && (
+      {/* Debug panel */}
+      {debugInfo && (
+        <div className="relative bg-[hsl(225,20%,8%)] border border-border rounded-lg p-4 text-xs font-mono space-y-2">
+          <button
+            onClick={() => setDebugInfo(null)}
+            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <p className="text-primary font-bold text-sm mb-2">🔍 Debug — Última atualização</p>
+          <p>Cards buscados: <span className="text-foreground">F9={debugInfo.cardsF9} | F10={debugInfo.cardsF10} | F11={debugInfo.cardsF11}</span></p>
+          <p>Dias processados e salvos: <span className="text-foreground">{debugInfo.diasProcessados}</span></p>
+          <p>lerMesSupabase retornou: <span className="text-foreground">{debugInfo.lerMesResult.rows} linhas</span></p>
+          {debugInfo.lerMesResult.datas.length > 0 && (
+            <p className="text-muted-foreground">Datas: {debugInfo.lerMesResult.datas.join(", ")}</p>
+          )}
+          {debugInfo.erro && (
+            <p className="text-destructive">Erro: {debugInfo.erro}</p>
+          )}
+        </div>
+      )}
+
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
           {loadingKPI ? (progresso || "Carregando histórico...") : "Carregando dados do mês..."}
