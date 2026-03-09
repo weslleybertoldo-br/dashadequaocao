@@ -209,10 +209,15 @@ function KPITable({
                   </td>
 
                   <td className="px-3 py-2 text-center" style={{ background: "hsl(var(--card))" }}>
-                    <div className="text-[11px] text-muted-foreground mb-0.5">%</div>
-                    <span className={`font-mono text-base font-bold ${getPercentColor(pct)}`}>
-                      {pct}%
-                    </span>
+                    <div className="text-[11px] text-muted-foreground mb-0.5">FALTAM</div>
+                    {(() => {
+                      const faltam = Math.max(0, META_SEMANAL - weekTotal);
+                      return (
+                        <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
+                          {faltam === 0 ? "✓" : faltam}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               );
