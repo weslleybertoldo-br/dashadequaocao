@@ -12,6 +12,7 @@ serve(async (req) => {
   }
 
   const config = {
+    pipeId: Deno.env.get("PIPEFY_PIPE_ID") || "303781436",
     phase9: Deno.env.get("PIPEFY_PHASE9_ID") || "323044836",
     phase10: Deno.env.get("PIPEFY_PHASE10_ID") || "326702699",
     phase5: Deno.env.get("PIPEFY_PHASE5_ID") || "333848127",
