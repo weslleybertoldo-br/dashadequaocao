@@ -139,12 +139,14 @@ function KPITable({
   semanas,
   dadosMes,
   onSaveCell,
+  showMetaColumns = true,
 }: {
   title: string;
   tipo: string;
   semanas: Date[][];
   dadosMes: Record<string, DiaData>;
   onSaveCell: (dataISO: string, tipo: string, value: number, imoveis: string[]) => void;
+  showMetaColumns?: boolean;
 }) {
   return (
     <div>
