@@ -67,6 +67,7 @@ interface OverviewPageProps {
   todayLoading: boolean;
   stage2Loading: boolean;
   stage2Duration: number | null;
+  tablesLoading?: boolean;
 }
 
 
@@ -125,7 +126,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration }: OverviewPageProps) {
+export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, tablesLoading }: OverviewPageProps) {
   const pipe1Cards = useMemo(() => [...phase9Cards, ...phase10Cards], [phase9Cards, phase10Cards]);
 
   const [search1, setSearch1] = useState("");
@@ -277,6 +278,13 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
         </div>
       </div>
 
+      {tablesLoading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando tabelas...</p>
+        </div>
+      ) : (
+      <>
       {/* Pipe 1 Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -365,6 +373,8 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
