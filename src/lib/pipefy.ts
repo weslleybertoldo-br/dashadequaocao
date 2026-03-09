@@ -197,10 +197,6 @@ function todayBRTKey(): string {
   return toBRTDateKey(new Date());
 }
 
-function todayBRTDDMMYYYY(): string {
-  const brt = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
-  return `${String(brt.getUTCDate()).padStart(2, "0")}/${String(brt.getUTCMonth() + 1).padStart(2, "0")}/${brt.getUTCFullYear()}`;
-}
 
 // ── Phase history helpers ────────────────────────────────
 // Card "ativo hoje" = entered Phase 9 for the first time today (BRT)
