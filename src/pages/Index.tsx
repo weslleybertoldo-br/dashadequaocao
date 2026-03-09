@@ -32,7 +32,7 @@ function formatTime(date: Date | null) {
 }
 
 const Index = () => {
-  const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotLoaded } = usePipefyData();
+  const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotLoaded, snapshotDebug } = usePipefyData();
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
@@ -196,6 +196,17 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="overview">
+            {snapshotDebug && (
+              <div className="mb-4 p-3 rounded-lg bg-secondary border border-border text-xs font-mono space-y-1">
+                <p className="font-semibold text-foreground">🔍 Snapshot Debug</p>
+                <p>Query: <span className="text-primary">{snapshotDebug.queryMs}ms</span></p>
+                <p>Rows: {JSON.stringify(Object.keys(snapshotDebug.rows))}</p>
+                <p>ativos_hoje: <span className="text-primary">{snapshotDebug.rows["ativos_hoje"]?.valor ?? "N/A"}</span></p>
+                <p>finalizados_hoje: <span className="text-primary">{snapshotDebug.rows["finalizados_hoje"]?.valor ?? "N/A"}</span></p>
+                <p>State updated: <span className={snapshotDebug.stateUpdated ? "text-green-400" : "text-red-400"}>{String(snapshotDebug.stateUpdated)}</span></p>
+                <p>loading: {String(loading)} | snapshotLoaded: {String(snapshotLoaded)} | entradasHoje: {entradasHoje?.count ?? "null"} | concluidosHoje: {concluidosHoje?.count ?? "null"}</p>
+              </div>
+            )}
             {loading && !data && !entradasHoje && !concluidosHoje && !snapshotLoaded && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
