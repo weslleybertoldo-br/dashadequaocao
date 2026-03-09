@@ -196,7 +196,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            {!data && loading && !entradasHoje && !concluidosHoje && (
+            {loading && !data && !entradasHoje && !concluidosHoje && !snapshotLoaded && (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Carregando dados do Pipefy...</p>
