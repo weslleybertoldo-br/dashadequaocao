@@ -44,7 +44,7 @@ export async function lerMesSupabase(
     .gte("data_iso", inicioMes)
     .lt("data_iso", proximoMes);
 
-  console.log("[lerMesSupabase]", prefixo, "→", data?.length ?? 0, "rows", error ?? "OK");
+  console.log("[lerMesSupabase]", inicioMes, "→", data?.length ?? 0, "rows", error ?? "OK");
 
   if (error) {
     console.error("Erro ao ler kpi_historico:", error);
