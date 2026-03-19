@@ -288,7 +288,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
       {/* Pipe 1 Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-lg">Pipe 1 — Fases 9 e 10</h3>
+          <h3 style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-bold)" }}>Pipe 1 — Fases 9 e 10</h3>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
