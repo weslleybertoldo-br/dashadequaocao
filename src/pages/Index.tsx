@@ -6,7 +6,8 @@ import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
 import { KPIsPage } from "@/components/KPIsPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock, Settings, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
