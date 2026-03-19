@@ -186,14 +186,14 @@ const Index = () => {
 
       <div className="container px-6 py-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="bg-secondary border border-border mb-6">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="bg-secondary border border-border mb-6 rounded-full">
+            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="hosts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="hosts" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Por Anfitrião
             </TabsTrigger>
-            <TabsTrigger value="kpis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="kpis" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               KPI's
             </TabsTrigger>
           </TabsList>
