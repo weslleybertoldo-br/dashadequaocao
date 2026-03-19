@@ -126,7 +126,8 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
         {filtered.map((host) => (
           <div
             key={host.name}
-            className="flex items-center gap-4 bg-card border border-border rounded-lg px-5 py-4 hover:bg-secondary/30 transition-colors"
+            className="flex items-center gap-4 bg-card border border-border rounded-xl px-5 py-4 hover:bg-secondary/30 transition-colors"
+            style={{ boxShadow: "var(--elevation-sm)" }}
           >
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-display font-bold text-sm shrink-0">
