@@ -169,8 +169,8 @@ function KPITable({
               return (
                 <tr key={sIdx} className="group">
                   <td
-                    className="px-3 py-2 text-xs font-display font-bold text-muted-foreground whitespace-nowrap"
-                    style={{ background: "hsl(225 15% 5%)" }}
+                    style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-weight-bold)", background: "hsl(var(--surface))" }}
+                    className="px-3 py-2 text-muted-foreground whitespace-nowrap"
                   >
                     SEM {sIdx + 1}
                   </td>
