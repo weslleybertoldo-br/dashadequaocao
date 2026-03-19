@@ -121,34 +121,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border bg-card sticky top-0 z-50" style={{ boxShadow: "var(--elevation-sm)" }}>
         <div className="container flex items-center justify-between h-14 px-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-sm">S</span>
+              <span className="text-primary-foreground" style={{ fontSize: "var(--text-body)", fontWeight: "var(--font-weight-bold)" }}>S</span>
             </div>
-            <h1 className="font-display font-bold text-lg tracking-tight">KPI Adequação - Final do Funil</h1>
+            <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-bold)" }}>KPI Adequação - Final do Funil</span>
           </div>
 
           <div className="flex items-center gap-4">
-            <span style={{ fontFamily: "'Dancing Script', cursive", fontSize: "19px", color: "#e5e7eb" }}>
+            <span className="text-muted-foreground" style={{ fontSize: "var(--text-body)", fontWeight: "var(--font-weight-medium)" }}>
               by Weslley Bertoldo
             </span>
             {activeTab !== "no-adequacao" && (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-muted-foreground" style={{ fontSize: "var(--text-sm)" }}>
                       <Clock className="w-3.5 h-3.5" />
-                      <span className="font-mono">
+                      <span style={{ fontFamily: "monospace" }}>
                         {lastUpdate ? formatTime(lastUpdate) : "—"}
                       </span>
-                      <span className="text-muted-foreground/50">|</span>
-                      <span className="text-muted-foreground/70">próx: {nextRefresh}</span>
+                      <span className="opacity-50">|</span>
+                      <span className="opacity-70">próx: {nextRefresh}</span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Auto-refresh às 06:00 e 19:00 (Brasília)</p>
+                    <span className="detail-regular">Auto-refresh às 06:00 e 19:00 (Brasília)</span>
                   </TooltipContent>
                 </Tooltip>
 
@@ -177,7 +177,7 @@ const Index = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs">Sem Adequação</p>
+                <span className="detail-regular">Sem Adequação</span>
               </TooltipContent>
             </Tooltip>
           </div>
