@@ -150,8 +150,8 @@ function KPITable({
 }) {
   return (
     <div>
-      <div className="mb-3 border-b border-primary/40 pb-2">
-        <h3 className="font-display font-bold text-sm uppercase tracking-widest text-foreground">
+      <div className="mb-3 border-b pb-2" style={{ borderColor: "hsl(var(--primary) / 0.4)" }}>
+        <h3 style={{ fontSize: "var(--text-body)", fontWeight: "var(--font-weight-bold)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
           {title}
         </h3>
       </div>
