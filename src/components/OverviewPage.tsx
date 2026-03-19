@@ -208,7 +208,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {simpleStats.map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-lg p-4">
+          <div key={s.label} className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--elevation-sm)" }}>
             <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
             <p className="text-2xl font-mono font-bold text-foreground">{s.value}</p>
           </div>

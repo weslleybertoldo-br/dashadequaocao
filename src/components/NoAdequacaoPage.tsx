@@ -121,7 +121,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "var(--elevation-sm)" }}>
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary/50">

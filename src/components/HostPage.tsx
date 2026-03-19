@@ -154,8 +154,8 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap"
-                    style={{ background: "#181c24", border: "1px solid #1e2330", borderRadius: 8, zIndex: 9999 }}
+                    className="max-w-xs max-h-64 overflow-y-auto whitespace-pre-wrap"
+                    style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius-lg)", zIndex: 9999 }}
                   >
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
                       {host.cards.length} imóve{host.cards.length !== 1 ? "is" : "l"}
