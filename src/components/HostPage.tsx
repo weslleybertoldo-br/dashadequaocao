@@ -100,7 +100,7 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-display font-bold">Por Anfitrião</h2>
+        <h2 style={{ fontSize: "var(--text-xl)", fontWeight: "var(--font-weight-medium)" }}>Por Anfitrião</h2>
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
