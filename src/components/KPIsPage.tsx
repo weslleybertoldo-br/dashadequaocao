@@ -150,8 +150,8 @@ function KPITable({
 }) {
   return (
     <div>
-      <div className="mb-3 border-b border-primary/40 pb-2">
-        <h3 className="font-display font-bold text-sm uppercase tracking-widest text-foreground">
+      <div className="mb-3 border-b pb-2" style={{ borderColor: "hsl(var(--primary) / 0.4)" }}>
+        <h3 style={{ fontSize: "var(--text-body)", fontWeight: "var(--font-weight-bold)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
           {title}
         </h3>
       </div>
@@ -169,8 +169,8 @@ function KPITable({
               return (
                 <tr key={sIdx} className="group">
                   <td
-                    className="px-3 py-2 text-xs font-display font-bold text-muted-foreground whitespace-nowrap"
-                    style={{ background: "hsl(225 15% 5%)" }}
+                    style={{ fontSize: "var(--text-sm)", fontWeight: "var(--font-weight-bold)", background: "hsl(var(--surface))" }}
+                    className="px-3 py-2 text-muted-foreground whitespace-nowrap"
                   >
                     SEM {sIdx + 1}
                   </td>
@@ -199,7 +199,7 @@ function KPITable({
 
                   <td
                     className="px-3 py-2 text-center"
-                    style={{ background: "hsl(225 20% 11%)" }}
+                    style={{ background: "hsl(var(--surface))" }}
                   >
                     <div className="text-[11px] text-muted-foreground mb-0.5">TOTAL</div>
                     <span

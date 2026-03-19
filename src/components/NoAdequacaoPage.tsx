@@ -104,7 +104,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-display font-bold text-foreground">Sem Adequação</h2>
+          <h2 style={{ fontSize: "var(--text-md)", fontWeight: "var(--font-weight-bold)" }}>Sem Adequação</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Imóveis nas Fases 9/10 sem card correspondente na Fase 5.
             Total: <span className="font-semibold text-foreground">{cardsWithoutAdequacao.length}</span>
@@ -121,7 +121,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "var(--elevation-sm)" }}>
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary/50">

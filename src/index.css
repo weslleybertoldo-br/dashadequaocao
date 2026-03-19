@@ -2,56 +2,95 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap');
-
 @layer base {
   :root {
-    --background: 220 20% 4%;
-    --foreground: 220 10% 90%;
+    /* Bluezone Design System Tokens */
+    --font-family: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, sans-serif;
 
-    --card: 225 15% 7%;
-    --card-foreground: 220 10% 90%;
+    /* Typography sizes */
+    --text-2xl: 48px;
+    --text-xl: 30px;
+    --text-lg: 24px;
+    --text-md: 20px;
+    --text-base: 18px;
+    --text-p: 16px;
+    --text-body: 14px;
+    --text-sm: 12px;
 
-    --popover: 225 15% 7%;
-    --popover-foreground: 220 10% 90%;
+    /* Font weights */
+    --font-weight-bold: 700;
+    --font-weight-medium: 500;
+    --font-weight-normal: 400;
 
-    --primary: 217 91% 60%;
+    /* Border radius */
+    --radius-none: 0px;
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
+    --radius-3xl: 24px;
+    --radius-4xl: 32px;
+    --radius-full: 9999px;
+
+    /* Elevation */
+    --elevation-sm: 0 1px 2px rgba(0,0,0,0.2), 0 0.1px 0.3px rgba(0,0,0,0.1);
+
+    /* Semantic tokens — LIGHT THEME */
+    --background: 0 0% 100%;
+    --foreground: 228 70% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 230 50% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 50% 16%;
+
+    --primary: 222 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 225 12% 12%;
-    --secondary-foreground: 220 10% 80%;
+    --secondary: 230 41% 96%;
+    --secondary-foreground: 228 70% 11%;
 
-    --muted: 225 12% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 228 12% 90%;
+    --muted-foreground: 231 11% 47%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 228 12% 90%;
+    --accent-foreground: 229 35% 21%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 357 100% 45%;
+    --destructive-foreground: 240 7% 95%;
 
-    --success: 160 59% 40%;
+    --success: 82 100% 41%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 63%;
+    --warning: 22 100% 48%;
     --warning-foreground: 0 0% 5%;
 
-    --border: 225 12% 16%;
-    --input: 225 12% 16%;
-    --ring: 217 91% 60%;
+    --border: 228 12% 90%;
+    --input: 240 7% 95%;
+    --ring: 230 50% 16%;
 
-    --radius: 0.75rem;
+    --radius: 8px;
 
-    --surface: 225 15% 7%;
+    --surface: 240 7% 95%;
 
-    --sidebar-background: 225 15% 7%;
-    --sidebar-foreground: 220 10% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 70% 11%;
+    --sidebar-primary: 224 75% 41%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 12% 12%;
-    --sidebar-accent-foreground: 220 10% 80%;
-    --sidebar-border: 225 12% 16%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 240 7% 95%;
+    --sidebar-accent-foreground: 229 35% 21%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 226 84% 49%;
+
+    /* Chart colors */
+    --chart-1: 222 100% 50%;
+    --chart-2: 226 84% 49%;
+    --chart-3: 271 96% 52%;
+    --chart-4: 82 100% 32%;
+    --chart-5: 32 100% 51%;
   }
 }
 
@@ -61,10 +100,56 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    font-family: var(--font-family);
+    letter-spacing: 0.02em;
+    @apply bg-background text-foreground antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  /* Bluezone Typography System */
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.02em;
   }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+  }
+
+  h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    font-size: var(--text-p);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer components {
+  .lead { font-size: var(--text-md); font-weight: var(--font-weight-medium); }
+  .large { font-size: var(--text-base); font-weight: var(--font-weight-medium); }
+  .p-ui { font-size: var(--text-p); font-weight: var(--font-weight-bold); }
+  .p-ui-medium { font-size: var(--text-p); font-weight: var(--font-weight-medium); }
+  .list { font-size: var(--text-p); font-weight: var(--font-weight-normal); }
+  .body { font-size: var(--text-body); font-weight: var(--font-weight-medium); }
+  .body-regular { font-size: var(--text-body); font-weight: var(--font-weight-normal); }
+  .subtle-medium { font-size: var(--text-body); font-weight: var(--font-weight-medium); }
+  .subtle-regular { font-size: var(--text-body); font-weight: var(--font-weight-normal); }
+  .small { font-size: var(--text-body); font-weight: var(--font-weight-normal); }
+  .detail-medium { font-size: var(--text-sm); font-weight: var(--font-weight-medium); }
+  .detail-regular { font-size: var(--text-sm); font-weight: var(--font-weight-normal); }
+  .table-head { font-size: var(--text-body); font-weight: var(--font-weight-medium); }
+  .table-item { font-size: var(--text-body); font-weight: var(--font-weight-normal); }
 }

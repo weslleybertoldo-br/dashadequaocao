@@ -208,7 +208,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {simpleStats.map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-lg p-4">
+          <div key={s.label} className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--elevation-sm)" }}>
             <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
             <p className="text-2xl font-mono font-bold text-foreground">{s.value}</p>
           </div>
@@ -288,7 +288,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
       {/* Pipe 1 Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-lg">Pipe 1 — Fases 9 e 10</h3>
+          <h3 style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-bold)" }}>Pipe 1 — Fases 9 e 10</h3>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -299,7 +299,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
             />
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "var(--elevation-sm)" }}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/50">
@@ -331,7 +331,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
       {/* Pipe 2 Table */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-lg">Pipe 2 — Fase 5</h3>
+          <h3 style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-bold)" }}>Pipe 2 — Fase 5</h3>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -342,7 +342,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
             />
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "var(--elevation-sm)" }}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/50">

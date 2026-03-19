@@ -14,9 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Syne", "sans-serif"],
-        mono: ["DM Mono", "monospace"],
-        body: ["Inter", "sans-serif"],
+        sans: ["'Helvetica Neue'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -76,6 +74,7 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "var(--radius-xl, 12px)",
       },
       keyframes: {
         "accordion-down": {

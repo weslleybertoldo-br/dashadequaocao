@@ -100,7 +100,7 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-display font-bold">Por Anfitrião</h2>
+        <h2 style={{ fontSize: "var(--text-xl)", fontWeight: "var(--font-weight-medium)" }}>Por Anfitrião</h2>
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -126,7 +126,8 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
         {filtered.map((host) => (
           <div
             key={host.name}
-            className="flex items-center gap-4 bg-card border border-border rounded-lg px-5 py-4 hover:bg-secondary/30 transition-colors"
+            className="flex items-center gap-4 bg-card border border-border rounded-xl px-5 py-4 hover:bg-secondary/30 transition-colors"
+            style={{ boxShadow: "var(--elevation-sm)" }}
           >
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-display font-bold text-sm shrink-0">
@@ -145,16 +146,16 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p
-                      className="text-lg font-mono font-bold cursor-help"
-                      style={{ borderBottom: "1px dotted #4b5563" }}
+                      className="cursor-help"
+                      style={{ fontSize: "var(--text-base)", fontFamily: "monospace", fontWeight: "var(--font-weight-bold)", borderBottom: "1px dotted hsl(var(--muted-foreground))" }}
                     >
                       {host.cards.length}
                     </p>
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap"
-                    style={{ background: "#181c24", border: "1px solid #1e2330", borderRadius: 8, zIndex: 9999 }}
+                    className="max-w-xs max-h-64 overflow-y-auto whitespace-pre-wrap"
+                    style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius-lg)", zIndex: 9999 }}
                   >
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
                       {host.cards.length} imóve{host.cards.length !== 1 ? "is" : "l"}
