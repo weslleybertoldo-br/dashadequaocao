@@ -6,7 +6,8 @@ import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
 import { KPIsPage } from "@/components/KPIsPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock, Settings } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock, Settings, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +34,7 @@ function formatTime(date: Date | null) {
 
 const Index = () => {
   const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotReady } = usePipefyData();
+  const { dark, toggle: toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<string>("");
@@ -178,6 +180,22 @@ const Index = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span className="detail-regular">Sem Adequação</span>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="detail-regular">{dark ? "Modo Claro" : "Modo Escuro"}</span>
               </TooltipContent>
             </Tooltip>
           </div>
