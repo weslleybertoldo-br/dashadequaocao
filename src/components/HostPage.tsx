@@ -146,8 +146,8 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p
-                      className="text-lg font-mono font-bold cursor-help"
-                      style={{ borderBottom: "1px dotted #4b5563" }}
+                      className="cursor-help"
+                      style={{ fontSize: "var(--text-base)", fontFamily: "monospace", fontWeight: "var(--font-weight-bold)", borderBottom: "1px dotted hsl(var(--muted-foreground))" }}
                     >
                       {host.cards.length}
                     </p>
