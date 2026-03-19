@@ -199,7 +199,7 @@ function KPITable({
 
                   <td
                     className="px-3 py-2 text-center"
-                    style={{ background: "hsl(225 20% 11%)" }}
+                    style={{ background: "hsl(var(--surface))" }}
                   >
                     <div className="text-[11px] text-muted-foreground mb-0.5">TOTAL</div>
                     <span
