@@ -182,6 +182,22 @@ const Index = () => {
                 <span className="detail-regular">Sem Adequação</span>
               </TooltipContent>
             </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="detail-regular">{dark ? "Modo Claro" : "Modo Escuro"}</span>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
