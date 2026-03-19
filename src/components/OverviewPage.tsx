@@ -342,7 +342,7 @@ export function OverviewPage({ phase9Cards, phase10Cards, phase5Cards, entradasH
             />
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "var(--elevation-sm)" }}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-secondary/50">
