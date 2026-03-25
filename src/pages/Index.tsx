@@ -6,7 +6,9 @@ import { OverviewPage } from "@/components/OverviewPage";
 import { HostPage } from "@/components/HostPage";
 import { NoAdequacaoPage } from "@/components/NoAdequacaoPage";
 import { KPIsPage } from "@/components/KPIsPage";
-import { Loader2, AlertTriangle, RefreshCw, Clock, Settings, Sun, Moon } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Clock, Settings, Sun, Moon, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,7 @@ function formatTime(date: Date | null) {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotReady } = usePipefyData();
   const { dark, toggle: toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
@@ -196,6 +199,25 @@ const Index = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span className="detail-regular">{dark ? "Modo Claro" : "Modo Escuro"}</span>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate("/login");
+                  }}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="detail-regular">Sair</span>
               </TooltipContent>
             </Tooltip>
           </div>
