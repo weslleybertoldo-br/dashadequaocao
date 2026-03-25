@@ -200,6 +200,25 @@ const Index = () => {
                 <span className="detail-regular">{dark ? "Modo Claro" : "Modo Escuro"}</span>
               </TooltipContent>
             </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate("/login");
+                  }}
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span className="detail-regular">Sair</span>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
