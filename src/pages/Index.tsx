@@ -35,6 +35,7 @@ function formatTime(date: Date | null) {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotReady } = usePipefyData();
   const { dark, toggle: toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
