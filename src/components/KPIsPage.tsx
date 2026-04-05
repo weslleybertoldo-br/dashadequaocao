@@ -330,76 +330,88 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   const [ativosTotais, setAtivosTotais] = useState<number | null>(null);
   const [resumoMensal, setResumoMensal] = useState<Record<string, number>>({});
 
-  // Load month data from Supabase (busca mes exibido + meses vizinhos se semana cruza)
+  // ── Sapron: busca status_log + properties_list para ativacao ──
   useEffect(() => {
     setLoadingMes(true);
-    // Verificar se semanas incluem dias de outros meses
-    const mesesNecessarios = new Set<string>();
-    mesesNecessarios.add(`${ano}-${mes}`);
-    semanas.forEach((semana) => {
-      semana.forEach((dia) => {
-        mesesNecessarios.add(`${dia.getFullYear()}-${dia.getMonth()}`);
-      });
-    });
 
-    const promises = Array.from(mesesNecessarios).map((key) => {
-      const [a, m] = key.split("-").map(Number);
-      return lerMesSupabase(a, m);
-    });
-
-    Promise.all(promises).then((resultados) => {
+    Promise.all([
+      supabase.rpc("sapron_status_log"),
+      supabase.rpc("sapron_properties_list"),
+      // Finalizados: buscar do kpi_historico (Pipefy)
+      (() => {
+        const mesesNecessarios = new Set<string>();
+        mesesNecessarios.add(`${ano}-${mes}`);
+        semanas.forEach((semana) => {
+          semana.forEach((dia) => {
+            mesesNecessarios.add(`${dia.getFullYear()}-${dia.getMonth()}`);
+          });
+        });
+        return Promise.all(
+          Array.from(mesesNecessarios).map((key) => {
+            const [a, m] = key.split("-").map(Number);
+            return lerMesSupabase(a, m);
+          })
+        );
+      })(),
+    ]).then(([statusLogRes, propsRes, finalizadosMeses]) => {
       const mapa: Record<string, DiaData> = {};
-      resultados.forEach((r) => Object.assign(mapa, r));
+
+      // 1. Finalizados do kpi_historico (so pegar _finalizados)
+      finalizadosMeses.forEach((r) => {
+        Object.entries(r).forEach(([key, val]) => {
+          if (key.endsWith("_finalizados")) {
+            mapa[key] = val;
+          }
+        });
+      });
+
+      // 2. Ativacao do Sapron
+      if (!statusLogRes.error && statusLogRes.data && !propsRes.error && propsRes.data) {
+        const logs = statusLogRes.data as { status: string; exchange_date: string; property: number }[];
+        const props = propsRes.data as { id: number; code: string; status: string }[];
+
+        // Map property ID -> code
+        const codeMap = new Map<number, string>();
+        props.forEach((p) => codeMap.set(p.id, p.code));
+
+        // Ativos totais
+        setAtivosTotais(props.filter((p) => p.status === "Active").length);
+
+        // Agrupar ativacoes por dia (primeira ativacao de cada imovel naquele dia)
+        const activeEntries = logs.filter((e) => e.status === "Active");
+        const porDia: Record<string, Set<number>> = {};
+        activeEntries.forEach((entry) => {
+          const dia = entry.exchange_date;
+          if (!porDia[dia]) porDia[dia] = new Set();
+          porDia[dia].add(entry.property);
+        });
+
+        Object.entries(porDia).forEach(([dia, propSet]) => {
+          const codes = Array.from(propSet).map((id) => codeMap.get(id) || `ID:${id}`);
+          mapa[`${dia}_ativacao`] = { total: propSet.size, imoveis: codes };
+        });
+
+        // Resumo mensal
+        const resumo: Record<string, number> = {};
+        for (let m = 0; m <= mesReal; m++) {
+          const mesStr = `${anoReal}-${String(m + 1).padStart(2, "0")}`;
+          const propsDoMes = new Set<number>();
+          activeEntries.forEach((entry) => {
+            if (entry.exchange_date.startsWith(mesStr)) {
+              propsDoMes.add(entry.property);
+            }
+          });
+          resumo[String(m)] = propsDoMes.size;
+        }
+        setResumoMensal(resumo);
+      }
+
       setDadosMes(mapa);
       setLoadingMes(false);
     });
-  }, [ano, mes, semanas]);
+  }, [ano, mes, semanas, anoReal, mesReal]);
 
-  // Fetch total active properties from Sapron via RPC
-  useEffect(() => {
-    supabase.rpc("sapron_properties_list").then(({ data, error }) => {
-      if (error || !data) return;
-      const ativos = (data as { id: number; code: string; status: string }[])
-        .filter((p) => p.status === "Active").length;
-      setAtivosTotais(ativos);
-    });
-  }, []);
-
-  // Fetch resumo mensal (Jan ate mes atual) do Sapron via RPC
-  useEffect(() => {
-    supabase.rpc("sapron_status_log").then(({ data, error }) => {
-      if (error || !data) return;
-      const logs = data as { id: number; status: string; exchange_date: string; property: number }[];
-      const porMes: Record<string, Set<number>> = {};
-
-      for (let m = 0; m <= mesReal; m++) {
-        const mesStr = `${anoReal}-${String(m + 1).padStart(2, "0")}`;
-        porMes[String(m)] = new Set();
-        logs.forEach((entry) => {
-          if (entry.status === "Active" && entry.exchange_date.startsWith(mesStr)) {
-            porMes[String(m)].add(entry.property);
-          }
-        });
-      }
-
-      const resumo: Record<string, number> = {};
-      Object.entries(porMes).forEach(([m, props]) => {
-        resumo[m] = props.size;
-      });
-      setResumoMensal(resumo);
-    });
-  }, [anoReal, mesReal]);
-
-  // Reflect live dashboard values
-  useEffect(() => {
-    if (entradasHoje === null) return;
-    const hojeStr = hojeISO();
-    setDadosMes((prev) => ({
-      ...prev,
-      [`${hojeStr}_ativacao`]: { total: entradasHoje.count, imoveis: entradasHoje.titles },
-    }));
-  }, [entradasHoje]);
-
+  // Reflect live finalizados from Pipefy
   useEffect(() => {
     if (concluidosHoje === null) return;
     const hojeStr = hojeISO();
@@ -409,10 +421,12 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     }));
   }, [concluidosHoje]);
 
-  // Handle manual cell edit
+  // Handle manual cell edit (so para finalizados)
   const handleSaveCell = useCallback(
     (dataISO: string, tipo: string, value: number, imoveis: string[]) => {
-      salvarDiaSupabase(dataISO, tipo, value, imoveis);
+      if (tipo === "finalizados") {
+        salvarDiaSupabase(dataISO, tipo, value, imoveis);
+      }
       setDadosMes((prev) => ({
         ...prev,
         [`${dataISO}_${tipo}`]: { total: value, imoveis },
