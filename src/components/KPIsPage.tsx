@@ -43,8 +43,10 @@ function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
     segunda.setHours(0, 0, 0, 0);
     // So inclui se a segunda-feira ja chegou (>= 00:00 da segunda)
     if (segunda > hoje) break;
-    // Nao ultrapassar o mes seguinte (segunda deve estar no mes ou antes)
-    if (segunda.getMonth() > mes && segunda.getFullYear() >= ano) break;
+    // Nao ultrapassar o mes seguinte
+    const segMes = segunda.getMonth();
+    const segAno = segunda.getFullYear();
+    if (segAno > ano || (segAno === ano && segMes > mes)) break;
     const diasDaSemana: Date[] = [];
     for (let d = 0; d < 6; d++) {
       const dia = new Date(inicio);
@@ -268,14 +270,26 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   const [loadingMes, setLoadingMes] = useState(true);
   const [ativosTotais, setAtivosTotais] = useState<number | null>(null);
 
-  // Load month data and last update timestamp from Supabase
+  // Load month data from Supabase (inclui dias do mes anterior se a semana cruza)
   useEffect(() => {
     setLoadingMes(true);
-    lerMesSupabase(ano, mes).then((mapa) => {
-      setDadosMes(mapa);
-      setLoadingMes(false);
-    });
-  }, [ano, mes]);
+    const primeiroDiaSemana = semanas.length > 0 ? semanas[0][0] : null;
+    if (primeiroDiaSemana && primeiroDiaSemana.getMonth() !== mes) {
+      // Semana 1 comeca no mes anterior — buscar ambos os meses
+      Promise.all([
+        lerMesSupabase(primeiroDiaSemana.getFullYear(), primeiroDiaSemana.getMonth()),
+        lerMesSupabase(ano, mes),
+      ]).then(([mapaAnterior, mapaAtual]) => {
+        setDadosMes({ ...mapaAnterior, ...mapaAtual });
+        setLoadingMes(false);
+      });
+    } else {
+      lerMesSupabase(ano, mes).then((mapa) => {
+        setDadosMes(mapa);
+        setLoadingMes(false);
+      });
+    }
+  }, [ano, mes, semanas]);
 
   // Fetch total active properties from Sapron via RPC
   useEffect(() => {
