@@ -22,24 +22,29 @@ const META_MENSAL = 200;
 
 function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
   const semanas: Date[][] = [];
+  // Encontrar a segunda-feira da semana que contem o dia 1 do mes
   const primeiroDia = new Date(ano, mes, 1);
   const inicio = new Date(primeiroDia);
-  const diaSemana = inicio.getDay();
-  if (diaSemana !== 1) {
-    const diasAteSegunda = diaSemana === 0 ? 1 : 8 - diaSemana;
-    inicio.setDate(inicio.getDate() + diasAteSegunda);
+  const diaSemana = inicio.getDay(); // 0=dom, 1=seg, ...
+  // Voltar para a segunda-feira anterior (ou manter se ja for segunda)
+  if (diaSemana === 0) {
+    inicio.setDate(inicio.getDate() - 6); // domingo -> segunda anterior
+  } else if (diaSemana !== 1) {
+    inicio.setDate(inicio.getDate() - (diaSemana - 1)); // voltar para segunda
   }
+
   // So mostra semanas cuja segunda-feira ja passou (hora de Brasilia)
   const agora = new Date();
   const hoje = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   hoje.setHours(0, 0, 0, 0);
 
-  for (let s = 0; s < 5; s++) {
+  for (let s = 0; s < 6; s++) {
     const segunda = new Date(inicio);
-    segunda.setDate(inicio.getDate());
     segunda.setHours(0, 0, 0, 0);
     // So inclui se a segunda-feira ja chegou (>= 00:00 da segunda)
     if (segunda > hoje) break;
+    // Nao ultrapassar o mes seguinte (segunda deve estar no mes ou antes)
+    if (segunda.getMonth() > mes && segunda.getFullYear() >= ano) break;
     const diasDaSemana: Date[] = [];
     for (let d = 0; d < 6; d++) {
       const dia = new Date(inicio);
@@ -347,18 +352,18 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Ativos Totais (Sapron)</p>
-          <p className="text-2xl font-mono font-bold text-primary">
-            {ativosTotais !== null ? ativosTotais.toLocaleString("pt-BR") : "..."}
-          </p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Total Ativações (mês)</p>
           <p className={`text-2xl font-mono font-bold ${getPercentColor(pctAtivacao)}`}>{totalAtivacao}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Meta Mensal Ativação</p>
           <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-1">Ativos Totais (Sapron)</p>
+          <p className="text-2xl font-mono font-bold text-primary">
+            {ativosTotais !== null ? ativosTotais.toLocaleString("pt-BR") : "..."}
+          </p>
         </div>
       </div>
 
