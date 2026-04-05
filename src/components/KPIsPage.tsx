@@ -365,24 +365,26 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     });
   }, []);
 
-  // Fetch resumo mensal (Jan ate mes atual) para ativacao
+  // Fetch resumo mensal (Jan ate mes atual) do Sapron via RPC
   useEffect(() => {
-    const promises: Promise<{ mes: number; total: number }>[] = [];
-    for (let m = 0; m <= mesReal; m++) {
-      promises.push(
-        lerMesSupabase(anoReal, m).then((mapa) => {
-          let total = 0;
-          Object.entries(mapa).forEach(([key, val]) => {
-            if (key.endsWith("_ativacao")) total += val.total;
-          });
-          return { mes: m, total };
-        })
-      );
-    }
-    Promise.all(promises).then((resultados) => {
+    supabase.rpc("sapron_status_log").then(({ data, error }) => {
+      if (error || !data) return;
+      const logs = data as { id: number; status: string; exchange_date: string; property: number }[];
+      const porMes: Record<string, Set<number>> = {};
+
+      for (let m = 0; m <= mesReal; m++) {
+        const mesStr = `${anoReal}-${String(m + 1).padStart(2, "0")}`;
+        porMes[String(m)] = new Set();
+        logs.forEach((entry) => {
+          if (entry.status === "Active" && entry.exchange_date.startsWith(mesStr)) {
+            porMes[String(m)].add(entry.property);
+          }
+        });
+      }
+
       const resumo: Record<string, number> = {};
-      resultados.forEach((r) => {
-        resumo[String(r.mes)] = r.total;
+      Object.entries(porMes).forEach(([m, props]) => {
+        resumo[m] = props.size;
       });
       setResumoMensal(resumo);
     });
