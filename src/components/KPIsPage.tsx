@@ -22,31 +22,26 @@ const META_MENSAL = 200;
 
 function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
   const semanas: Date[][] = [];
-  // Encontrar a segunda-feira da semana que contem o dia 1 do mes
   const primeiroDia = new Date(ano, mes, 1);
   const inicio = new Date(primeiroDia);
-  const diaSemana = inicio.getDay(); // 0=dom, 1=seg, ...
-  // Voltar para a segunda-feira anterior (ou manter se ja for segunda)
-  if (diaSemana === 0) {
-    inicio.setDate(inicio.getDate() - 6); // domingo -> segunda anterior
-  } else if (diaSemana !== 1) {
-    inicio.setDate(inicio.getDate() - (diaSemana - 1)); // voltar para segunda
+  const diaSemana = inicio.getDay();
+  // Avancar para a primeira segunda-feira do mes (ou manter se ja for segunda)
+  if (diaSemana !== 1) {
+    const diasAteSegunda = diaSemana === 0 ? 1 : 8 - diaSemana;
+    inicio.setDate(inicio.getDate() + diasAteSegunda);
   }
 
-  // So mostra semanas cuja segunda-feira ja passou (hora de Brasilia)
+  // Hora de Brasilia para comparar com "hoje"
   const agora = new Date();
   const hoje = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   hoje.setHours(0, 0, 0, 0);
 
-  for (let s = 0; s < 6; s++) {
+  // Gerar 4 semanas fixas a partir da primeira segunda-feira
+  for (let s = 0; s < 4; s++) {
     const segunda = new Date(inicio);
     segunda.setHours(0, 0, 0, 0);
     // So inclui se a segunda-feira ja chegou (>= 00:00 da segunda)
     if (segunda > hoje) break;
-    // Nao ultrapassar o mes seguinte
-    const segMes = segunda.getMonth();
-    const segAno = segunda.getFullYear();
-    if (segAno > ano || (segAno === ano && segMes > mes)) break;
     const diasDaSemana: Date[] = [];
     for (let d = 0; d < 6; d++) {
       const dia = new Date(inicio);
@@ -270,26 +265,14 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
   const [loadingMes, setLoadingMes] = useState(true);
   const [ativosTotais, setAtivosTotais] = useState<number | null>(null);
 
-  // Load month data from Supabase (inclui dias do mes anterior se a semana cruza)
+  // Load month data from Supabase
   useEffect(() => {
     setLoadingMes(true);
-    const primeiroDiaSemana = semanas.length > 0 ? semanas[0][0] : null;
-    if (primeiroDiaSemana && primeiroDiaSemana.getMonth() !== mes) {
-      // Semana 1 comeca no mes anterior — buscar ambos os meses
-      Promise.all([
-        lerMesSupabase(primeiroDiaSemana.getFullYear(), primeiroDiaSemana.getMonth()),
-        lerMesSupabase(ano, mes),
-      ]).then(([mapaAnterior, mapaAtual]) => {
-        setDadosMes({ ...mapaAnterior, ...mapaAtual });
-        setLoadingMes(false);
-      });
-    } else {
-      lerMesSupabase(ano, mes).then((mapa) => {
-        setDadosMes(mapa);
-        setLoadingMes(false);
-      });
-    }
-  }, [ano, mes, semanas]);
+    lerMesSupabase(ano, mes).then((mapa) => {
+      setDadosMes(mapa);
+      setLoadingMes(false);
+    });
+  }, [ano, mes]);
 
   // Fetch total active properties from Sapron via RPC
   useEffect(() => {
