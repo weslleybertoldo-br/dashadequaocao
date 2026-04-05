@@ -16,32 +16,16 @@ interface KPIsPageProps {
   concluidosHoje: TodayResult | null;
 }
 
-const DIAS_LABEL = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+const DIAS_LABEL = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
 const META_SEMANAL = 50;
 const META_MENSAL = 200;
+const MESES_LABEL = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const MESES_FULL = ["Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
-  const semanas: Date[][] = [];
-  const primeiroDia = new Date(ano, mes, 1);
-  const inicio = new Date(primeiroDia);
-  const diaSemana = inicio.getDay();
-  // Avancar para a primeira segunda-feira do mes (ou manter se ja for segunda)
-  if (diaSemana !== 1) {
-    const diasAteSegunda = diaSemana === 0 ? 1 : 8 - diaSemana;
-    inicio.setDate(inicio.getDate() + diasAteSegunda);
-  }
+// ── Helpers ──
 
-  for (let s = 0; s < 4; s++) {
-    const diasDaSemana: Date[] = [];
-    for (let d = 0; d < 6; d++) {
-      const dia = new Date(inicio);
-      dia.setDate(inicio.getDate() + d);
-      diasDaSemana.push(dia);
-    }
-    semanas.push(diasDaSemana);
-    inicio.setDate(inicio.getDate() + 7);
-  }
-  return semanas;
+function getBRT(): Date {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
 }
 
 function formatarData(date: Date) {
@@ -68,6 +52,93 @@ function getPercentColor(pct: number) {
   if (pct >= 70) return "text-warning";
   return "text-destructive";
 }
+
+// ── Gerar semanas do mes ──
+// Semana 1 = semana (Seg-Sab) que contem o dia 1
+// Ultima semana = semana que contem o ultimo dia Seg-Sab do mes
+// Se o ultimo dia do mes cai no domingo, nao gera semana extra
+
+function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
+  const semanas: Date[][] = [];
+
+  // Achar a segunda-feira da semana que contem o dia 1
+  const dia1 = new Date(ano, mes, 1);
+  const dow = dia1.getDay(); // 0=dom 1=seg ...
+  const inicio = new Date(dia1);
+  if (dow === 0) {
+    // Dia 1 eh domingo: a semana Seg-Sab ja passou, proxima segunda = dia 2
+    inicio.setDate(inicio.getDate() + 1);
+  } else if (dow !== 1) {
+    // Voltar para a segunda anterior
+    inicio.setDate(inicio.getDate() - (dow - 1));
+  }
+
+  // Ultimo dia do mes
+  const ultimoDia = new Date(ano, mes + 1, 0); // dia 30 ou 31 etc
+
+  // Gerar semanas ate cobrir o ultimo dia util (Seg-Sab) do mes
+  const cursor = new Date(inicio);
+  while (true) {
+    const segunda = new Date(cursor);
+    const sabado = new Date(cursor);
+    sabado.setDate(sabado.getDate() + 5);
+
+    // Se a segunda ja passou do ultimo dia do mes, parar
+    if (segunda.getMonth() > mes && segunda.getFullYear() >= ano) break;
+    if (segunda.getFullYear() > ano) break;
+
+    // Verificar se esta semana tem pelo menos um dia Seg-Sab dentro do mes
+    let temDiaNoMes = false;
+    const diasDaSemana: Date[] = [];
+    for (let d = 0; d < 6; d++) {
+      const dia = new Date(cursor);
+      dia.setDate(cursor.getDate() + d);
+      diasDaSemana.push(dia);
+      if (dia.getMonth() === mes && dia.getFullYear() === ano) {
+        temDiaNoMes = true;
+      }
+    }
+
+    if (temDiaNoMes) {
+      semanas.push(diasDaSemana);
+    }
+
+    cursor.setDate(cursor.getDate() + 7);
+
+    // Safety: max 6 semanas
+    if (semanas.length >= 6) break;
+  }
+
+  return semanas;
+}
+
+// ── Determinar qual mes exibir ──
+// Se a segunda-feira da semana que contem o dia 1 do mes atual ainda nao chegou,
+// mostra o mes anterior
+
+function getMesExibido(ano: number, mes: number): { ano: number; mes: number } {
+  const hoje = getBRT();
+  hoje.setHours(0, 0, 0, 0);
+
+  const dia1 = new Date(ano, mes, 1);
+  const dow = dia1.getDay();
+  const segundaDaSemana1 = new Date(dia1);
+  if (dow === 0) {
+    segundaDaSemana1.setDate(segundaDaSemana1.getDate() + 1);
+  } else if (dow !== 1) {
+    segundaDaSemana1.setDate(segundaDaSemana1.getDate() - (dow - 1));
+  }
+
+  if (hoje < segundaDaSemana1) {
+    // Ainda nao chegou a segunda da primeira semana do mes atual
+    // Mostrar mes anterior
+    if (mes === 0) return { ano: ano - 1, mes: 11 };
+    return { ano, mes: mes - 1 };
+  }
+  return { ano, mes };
+}
+
+// ── Componentes ──
 
 function EditableCell({
   value,
@@ -115,7 +186,7 @@ function EditableCell({
         setEditing(true);
       }}
     >
-      {value !== null ? value : "—"}
+      {value !== null ? value : "\u2014"}
     </span>
   );
 
@@ -125,7 +196,7 @@ function EditableCell({
         <TooltipTrigger asChild>{display}</TooltipTrigger>
         <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
-            {imoveis.length} imóve{imoveis.length !== 1 ? "is" : "l"}
+            {imoveis.length} {imoveis.length !== 1 ? "imoveis" : "imovel"}
           </div>
           {imoveis.join("\n")}
         </TooltipContent>
@@ -167,7 +238,6 @@ function KPITable({
                 const key = `${toDateISO(dia)}_${tipo}`;
                 return s + (dadosMes[key]?.total ?? 0);
               }, 0);
-              const pct = META_SEMANAL > 0 ? Math.round((weekTotal / META_SEMANAL) * 100) : 0;
 
               return (
                 <tr key={sIdx} className="group">
@@ -226,7 +296,7 @@ function KPITable({
                           const faltam = Math.max(0, META_SEMANAL - weekTotal);
                           return (
                             <span className={`font-mono text-base font-bold ${getFaltamColor(faltam)}`}>
-                              {faltam === 0 ? "✓" : faltam}
+                              {faltam === 0 ? "\u2713" : faltam}
                             </span>
                           );
                         })()}
@@ -243,26 +313,47 @@ function KPITable({
   );
 }
 
+// ── Pagina principal ──
+
 export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
-  const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
+  const agora = getBRT();
+  const anoReal = agora.getFullYear();
+  const mesReal = agora.getMonth();
+
+  // Determinar qual mes exibir (pode ser o anterior se a semana ainda nao virou)
+  const { ano, mes } = useMemo(() => getMesExibido(anoReal, mesReal), [anoReal, mesReal]);
 
   const semanas = useMemo(() => gerarSemanasDoMes(ano, mes), [ano, mes]);
-
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
   const [ativosTotais, setAtivosTotais] = useState<number | null>(null);
+  const [resumoMensal, setResumoMensal] = useState<Record<string, number>>({});
 
-  // Load month data from Supabase
+  // Load month data from Supabase (busca mes exibido + meses vizinhos se semana cruza)
   useEffect(() => {
     setLoadingMes(true);
-    lerMesSupabase(ano, mes).then((mapa) => {
+    // Verificar se semanas incluem dias de outros meses
+    const mesesNecessarios = new Set<string>();
+    mesesNecessarios.add(`${ano}-${mes}`);
+    semanas.forEach((semana) => {
+      semana.forEach((dia) => {
+        mesesNecessarios.add(`${dia.getFullYear()}-${dia.getMonth()}`);
+      });
+    });
+
+    const promises = Array.from(mesesNecessarios).map((key) => {
+      const [a, m] = key.split("-").map(Number);
+      return lerMesSupabase(a, m);
+    });
+
+    Promise.all(promises).then((resultados) => {
+      const mapa: Record<string, DiaData> = {};
+      resultados.forEach((r) => Object.assign(mapa, r));
       setDadosMes(mapa);
       setLoadingMes(false);
     });
-  }, [ano, mes]);
+  }, [ano, mes, semanas]);
 
   // Fetch total active properties from Sapron via RPC
   useEffect(() => {
@@ -274,7 +365,30 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     });
   }, []);
 
-  // Reflect live dashboard values independently — each updates as soon as available
+  // Fetch resumo mensal (Jan ate mes atual) para ativacao
+  useEffect(() => {
+    const promises: Promise<{ mes: number; total: number }>[] = [];
+    for (let m = 0; m <= mesReal; m++) {
+      promises.push(
+        lerMesSupabase(anoReal, m).then((mapa) => {
+          let total = 0;
+          Object.entries(mapa).forEach(([key, val]) => {
+            if (key.endsWith("_ativacao")) total += val.total;
+          });
+          return { mes: m, total };
+        })
+      );
+    }
+    Promise.all(promises).then((resultados) => {
+      const resumo: Record<string, number> = {};
+      resultados.forEach((r) => {
+        resumo[String(r.mes)] = r.total;
+      });
+      setResumoMensal(resumo);
+    });
+  }, [anoReal, mesReal]);
+
+  // Reflect live dashboard values
   useEffect(() => {
     if (entradasHoje === null) return;
     const hojeStr = hojeISO();
@@ -305,21 +419,21 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     []
   );
 
-  // Compute month totals
+  // Compute month totals (apenas dias do mes exibido)
   const totalAtivacao = useMemo(() => {
     let tA = 0;
     semanas.forEach((semana) => {
       semana.forEach((dia) => {
-        const dataISO = toDateISO(dia);
-        tA += dadosMes[`${dataISO}_ativacao`]?.total ?? 0;
+        if (dia.getMonth() === mes && dia.getFullYear() === ano) {
+          const dataISO = toDateISO(dia);
+          tA += dadosMes[`${dataISO}_ativacao`]?.total ?? 0;
+        }
       });
     });
     return tA;
-  }, [semanas, dadosMes]);
+  }, [semanas, dadosMes, ano, mes]);
 
   const pctAtivacao = Math.round((totalAtivacao / META_MENSAL) * 100);
-
-  const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
   return (
     <div className="space-y-8">
@@ -327,23 +441,23 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       {loadingMes && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          Carregando dados do mês...
+          Carregando dados do mes...
         </div>
       )}
 
       {/* Month label */}
       <p className="text-xs text-muted-foreground font-display uppercase tracking-widest">
-        {MESES[mes]} {ano}
+        {MESES_FULL[mes]} {ano}
       </p>
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total Ativações (mês)</p>
+          <p className="text-xs text-muted-foreground mb-1">Total Ativacoes (mes)</p>
           <p className={`text-2xl font-mono font-bold ${getPercentColor(pctAtivacao)}`}>{totalAtivacao}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground mb-1">Meta Mensal Ativação</p>
+          <p className="text-xs text-muted-foreground mb-1">Meta Mensal Ativacao</p>
           <p className="text-2xl font-mono font-bold text-foreground">{META_MENSAL}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
@@ -354,9 +468,29 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
         </div>
       </div>
 
-      {/* Ativação table */}
+      {/* Resumo mensal de ativacoes */}
+      <div className="flex gap-2 flex-wrap">
+        {Array.from({ length: mesReal + 1 }, (_, m) => {
+          const total = resumoMensal[String(m)] ?? 0;
+          const isMesExibido = m === mes;
+          return (
+            <div
+              key={m}
+              className={`px-3 py-1.5 rounded-md text-center ${isMesExibido ? "bg-primary/15 border border-primary/30" : "bg-card border border-border"}`}
+              style={{ minWidth: 60 }}
+            >
+              <div className="text-[10px] text-muted-foreground uppercase">{MESES_LABEL[m]}</div>
+              <div className={`text-sm font-mono font-bold ${isMesExibido ? "text-primary" : "text-foreground"}`}>
+                {total}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Ativacao table */}
       <KPITable
-        title="Ativação"
+        title="Ativacao"
         tipo="ativacao"
         semanas={semanas}
         dadosMes={dadosMes}
