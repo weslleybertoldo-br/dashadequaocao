@@ -4,10 +4,10 @@ import {
   TodayResult,
   fetchAllCardsForPhase,
   fetchCardsUpdatedSince,
-  countAtivosHoje,
   countFinalizadosHoje,
   loadConfigFromServer,
 } from "@/lib/pipefy";
+import { getAtivosHojeSapron, clearSapronCache } from "@/lib/sapron";
 import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
 import { hojeISO } from "@/hooks/useKPIHistory";
 
@@ -91,7 +91,7 @@ export function usePipefyData() {
 
       const stage1Cards = [...phase9Cards, ...phase10Cards];
 
-      // ── STAGE 2 (optimized): fetch only cards updated today ──
+      // ── STAGE 2: Ativacoes via Sapron + Finalizados via Pipefy ──
       setStage2Loading(true);
       const stage2Start = Date.now();
 
@@ -99,34 +99,43 @@ export function usePipefyData() {
       const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStart = `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}T00:00:00-03:00`;
 
-      fetchCardsUpdatedSince(config.token, config.pipeId, todayStart)
-        .then(async (recentCards) => {
+      Promise.all([
+        getAtivosHojeSapron(),
+        fetchCardsUpdatedSince(config.token, config.pipeId, todayStart),
+      ])
+        .then(async ([ativosSapron, recentCards]) => {
+          // Ativacoes: dados do Sapron
+          setEntradasHoje(ativosSapron);
+
+          // Finalizados: dados do Pipefy
           const allCardsMap = new Map<string, PipefyCard>();
           for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
           }
-          const ativosFinal = countAtivosHoje(Array.from(allCardsMap.values()), config.phase9);
-          setEntradasHoje(ativosFinal);
-
           const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
           setConcluidosHoje(finalizadosFinal);
 
-          await persistSnapshot(ativosFinal, finalizadosFinal);
+          await persistSnapshot(ativosSapron, finalizadosFinal);
 
           const hojeStr = hojeISO();
-          salvarDiaSupabase(hojeStr, "ativacao", ativosFinal.count, ativosFinal.titles);
+          salvarDiaSupabase(hojeStr, "ativacao", ativosSapron.count, ativosSapron.titles);
           salvarDiaSupabase(hojeStr, "finalizados", finalizadosFinal.count, finalizadosFinal.titles);
           salvarUltimaAtualizacao();
 
           setStage2Duration(Math.round((Date.now() - stage2Start) / 1000));
           setStage2Loading(false);
         })
-        .catch(async () => {
-          const ativosFallback = countAtivosHoje(stage1Cards, config.phase9);
-          setEntradasHoje(ativosFallback);
+        .catch(async (err) => {
+          console.error("Stage 2 error:", err);
+          // Fallback: tenta Sapron separado, finalizados do Pipefy
+          try {
+            const ativosFallback = await getAtivosHojeSapron();
+            setEntradasHoje(ativosFallback);
+          } catch {
+            setEntradasHoje({ count: 0, titles: [] });
+          }
           const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
-          await persistSnapshot(ativosFallback, finalizadosFallback);
           setStage2Loading(false);
         });
     } catch (err: any) {

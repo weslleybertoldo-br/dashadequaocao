@@ -4,6 +4,7 @@ import {
   loadConfigFromServer,
   PipefyCard,
 } from "@/lib/pipefy";
+import { contarAtivacoesSapron, clearSapronCache } from "@/lib/sapron";
 import { salvarDiaSupabase, salvarUltimaAtualizacao } from "@/lib/supabaseData";
 
 // Re-export for consumers
@@ -43,9 +44,8 @@ function diasPassadosDoMes(): string[] {
   return dias;
 }
 
-// ── Count per day using phases_history ───────────────────
+// ── Count finalizados per day using Pipefy phases_history ──
 
-const FASE_9_ID = "323044836";
 const FASE_11_ID = "323044845";
 
 interface ContagemDia {
@@ -53,9 +53,8 @@ interface ContagemDia {
   imoveis: string[];
 }
 
-function contarPorDia(
+function contarFinalizadosPorDia(
   cards: PipefyCard[],
-  faseId: string,
   listaDeDatas: string[]
 ): Record<string, ContagemDia> {
   const resultado: Record<string, ContagemDia> = {};
@@ -63,7 +62,7 @@ function contarPorDia(
 
   cards.forEach((card) => {
     const entrada = card.phases_history?.find(
-      (h) => String(h.phase?.id) === String(faseId)
+      (h) => String(h.phase?.id) === String(FASE_11_ID)
     );
     if (!entrada?.firstTimeIn) return;
 
@@ -89,18 +88,20 @@ export function useKPIHistory() {
     if (dias.length === 0) return;
 
     setLoadingKPI(true);
-    setProgresso("Buscando histórico do Pipefy...");
 
     try {
-      const config = await loadConfigFromServer();
+      // ── Ativacao: busca do Sapron (status_log com status "Active") ──
+      setProgresso("Buscando ativacoes do Sapron...");
+      clearSapronCache();
+      const contagemAtivacao = await contarAtivacoesSapron(dias);
 
-      // Single query: all cards updated since the 1st of the month
-      const primeiroDia = dias[0]; // e.g. "2026-03-01"
+      // ── Finalizados: busca do Pipefy (phases_history Fase 11) ──
+      setProgresso("Buscando finalizados do Pipefy...");
+      const config = await loadConfigFromServer();
+      const primeiroDia = dias[0];
       const sinceISO = `${primeiroDia}T00:00:00-03:00`;
 
       const allCards = await fetchCardsUpdatedSince(config.token, config.pipeId, sinceISO);
-
-      setProgresso("Processando dados...");
 
       // Deduplicate
       const vistos = new Set<string>();
@@ -112,9 +113,9 @@ export function useKPIHistory() {
         }
       }
 
-      const contagemAtivacao = contarPorDia(cardsSemDuplicata, FASE_9_ID, dias);
-      const contagemFinalizados = contarPorDia(cardsSemDuplicata, FASE_11_ID, dias);
+      const contagemFinalizados = contarFinalizadosPorDia(cardsSemDuplicata, dias);
 
+      // ── Salvar no banco ──
       setProgresso("Salvando no banco de dados...");
 
       const savePromises: Promise<void>[] = [];
@@ -131,8 +132,8 @@ export function useKPIHistory() {
       setProgresso(null);
       setRefreshTrigger((p) => p + 1);
     } catch (err: any) {
-      console.error("Erro ao buscar histórico Pipefy:", err);
-      setProgresso("Erro ao carregar histórico.");
+      console.error("Erro ao buscar historico:", err);
+      setProgresso("Erro ao carregar historico.");
     } finally {
       setLoadingKPI(false);
     }
