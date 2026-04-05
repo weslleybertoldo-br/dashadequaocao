@@ -31,17 +31,7 @@ function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
     inicio.setDate(inicio.getDate() + diasAteSegunda);
   }
 
-  // Hora de Brasilia para comparar com "hoje"
-  const agora = new Date();
-  const hoje = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  hoje.setHours(0, 0, 0, 0);
-
-  // Gerar 4 semanas fixas a partir da primeira segunda-feira
   for (let s = 0; s < 4; s++) {
-    const segunda = new Date(inicio);
-    segunda.setHours(0, 0, 0, 0);
-    // So inclui se a segunda-feira ja chegou (>= 00:00 da segunda)
-    if (segunda > hoje) break;
     const diasDaSemana: Date[] = [];
     for (let d = 0; d < 6; d++) {
       const dia = new Date(inicio);
