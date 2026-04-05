@@ -1,11 +1,10 @@
-// ── Sapron API credentials (informativo — em producao migrar para Edge Function) ──
+import { supabase } from "@/integrations/supabase/client";
+
+// ── Sapron API credentials (informativo — API key fica no banco, nao no frontend) ──
 // URL: https://api.sapron.com.br/
 // Header: X-SAPRON-API-KEY: ***REDACTED_SAPRON_API_KEY***
 // Usuario: operacao-automacao@seazone.com.br
 // Senha: ***REDACTED_SAPRON_PASSWORD***
-
-const SAPRON_API_URL = "https://api.sapron.com.br";
-const SAPRON_API_KEY = "***REDACTED_SAPRON_API_KEY***";
 
 export interface StatusLogEntry {
   id: number;
@@ -24,25 +23,21 @@ export interface PropertyListItem {
 
 export interface SapronAtivacaoDia {
   total: number;
-  imoveis: string[]; // property codes
+  imoveis: string[];
 }
 
-// ── Fetch direto da API Sapron ──
+// ── Fetch via Supabase RPC (API key fica no banco) ──
 
-async function sapronFetch<T>(endpoint: string): Promise<T> {
-  const url = `${SAPRON_API_URL}/${endpoint}`;
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "X-SAPRON-API-KEY": SAPRON_API_KEY,
-    },
-  });
+async function fetchStatusLog(): Promise<StatusLogEntry[]> {
+  const { data, error } = await supabase.rpc("sapron_status_log");
+  if (error) throw new Error(`Erro sapron_status_log: ${error.message}`);
+  return data as StatusLogEntry[];
+}
 
-  if (!response.ok) {
-    throw new Error(`Sapron HTTP ${response.status}: ${endpoint}`);
-  }
-
-  return response.json() as Promise<T>;
+async function fetchPropertiesList(): Promise<PropertyListItem[]> {
+  const { data, error } = await supabase.rpc("sapron_properties_list");
+  if (error) throw new Error(`Erro sapron_properties_list: ${error.message}`);
+  return data as PropertyListItem[];
 }
 
 // ── Cache em memoria para evitar chamadas repetidas ──
@@ -64,14 +59,14 @@ export function clearSapronCache(): void {
 
 async function getStatusLog(): Promise<StatusLogEntry[]> {
   if (cachedStatusLog && isCacheValid()) return cachedStatusLog;
-  cachedStatusLog = await sapronFetch<StatusLogEntry[]>("property/status_log/");
+  cachedStatusLog = await fetchStatusLog();
   cacheTimestamp = Date.now();
   return cachedStatusLog;
 }
 
 async function getPropertiesList(): Promise<PropertyListItem[]> {
   if (cachedProperties && isCacheValid()) return cachedProperties;
-  cachedProperties = await sapronFetch<PropertyListItem[]>("properties/properties_list/");
+  cachedProperties = await fetchPropertiesList();
   return cachedProperties;
 }
 
@@ -101,14 +96,12 @@ export async function contarAtivacoesSapron(
     resultado[d] = { total: 0, imoveis: [] };
   }
 
-  // Filtrar apenas entradas com status "Active"
   const activeEntries = statusLog.filter((entry) => entry.status === "Active");
 
   for (const entry of activeEntries) {
-    const dataLog = entry.exchange_date; // formato "YYYY-MM-DD"
+    const dataLog = entry.exchange_date;
     if (resultado.hasOwnProperty(dataLog)) {
       const code = codeMap.get(entry.property) || `ID:${entry.property}`;
-      // Evitar duplicatas (mesmo imovel ativado mais de uma vez no dia)
       if (!resultado[dataLog].imoveis.includes(code)) {
         resultado[dataLog].total++;
         resultado[dataLog].imoveis.push(code);
