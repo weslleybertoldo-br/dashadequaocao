@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { TodayResult } from "@/lib/pipefy";
 import { hojeISO, DiaData } from "@/hooks/useKPIHistory";
 import { lerMesSupabase, salvarDiaSupabase } from "@/lib/supabaseData";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 import {
@@ -260,6 +261,7 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
   const [dadosMes, setDadosMes] = useState<Record<string, DiaData>>({});
   const [loadingMes, setLoadingMes] = useState(true);
+  const [ativosTotais, setAtivosTotais] = useState<number | null>(null);
 
   // Load month data and last update timestamp from Supabase
   useEffect(() => {
@@ -269,6 +271,16 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       setLoadingMes(false);
     });
   }, [ano, mes]);
+
+  // Fetch total active properties from Sapron via RPC
+  useEffect(() => {
+    supabase.rpc("sapron_properties_list").then(({ data, error }) => {
+      if (error || !data) return;
+      const ativos = (data as { id: number; code: string; status: string }[])
+        .filter((p) => p.status === "Active").length;
+      setAtivosTotais(ativos);
+    });
+  }, []);
 
   // Reflect live dashboard values independently — each updates as soon as available
   useEffect(() => {
@@ -333,7 +345,13 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
       </p>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-1">Ativos Totais (Sapron)</p>
+          <p className="text-2xl font-mono font-bold text-primary">
+            {ativosTotais !== null ? ativosTotais.toLocaleString("pt-BR") : "..."}
+          </p>
+        </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground mb-1">Total Ativações (mês)</p>
           <p className={`text-2xl font-mono font-bold ${getPercentColor(pctAtivacao)}`}>{totalAtivacao}</p>
