@@ -28,7 +28,17 @@ function gerarSemanasDoMes(ano: number, mes: number): Date[][] {
     const diasAteSegunda = diaSemana === 0 ? 1 : 8 - diaSemana;
     inicio.setDate(inicio.getDate() + diasAteSegunda);
   }
-  for (let s = 0; s < 4; s++) {
+  // So mostra semanas cuja segunda-feira ja passou (hora de Brasilia)
+  const agora = new Date();
+  const hoje = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  hoje.setHours(0, 0, 0, 0);
+
+  for (let s = 0; s < 5; s++) {
+    const segunda = new Date(inicio);
+    segunda.setDate(inicio.getDate());
+    segunda.setHours(0, 0, 0, 0);
+    // So inclui se a segunda-feira ja chegou (>= 00:00 da segunda)
+    if (segunda > hoje) break;
     const diasDaSemana: Date[] = [];
     for (let d = 0; d < 6; d++) {
       const dia = new Date(inicio);
