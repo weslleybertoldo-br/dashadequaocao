@@ -47,7 +47,7 @@ const Index = () => {
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
 
   const handleUnlockHidden = () => {
-    if (password === "***REDACTED_PASSWORD***") {
+    if (password === import.meta.env.VITE_UNLOCK_PASSWORD) {
       setHiddenUnlocked(true);
       setShowPasswordDialog(false);
       setActiveTab("no-adequacao");

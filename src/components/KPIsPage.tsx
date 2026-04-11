@@ -335,8 +335,8 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
     setLoadingMes(true);
 
     Promise.all([
-      (supabase.rpc as any)("sapron_status_log"),
-      (supabase.rpc as any)("sapron_properties_list"),
+      supabase.rpc("sapron_status_log"),
+      supabase.rpc("sapron_properties_list"),
       // Finalizados: buscar do kpi_historico (Pipefy)
       (() => {
         const mesesNecessarios = new Set<string>();
