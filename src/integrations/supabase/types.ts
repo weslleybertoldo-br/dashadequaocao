@@ -109,7 +109,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sapron_properties_list: { Args: never; Returns: Json }
+      sapron_status_log: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
