@@ -29,13 +29,13 @@ export interface SapronAtivacaoDia {
 // ── Fetch via Supabase RPC (API key fica no banco) ──
 
 async function fetchStatusLog(): Promise<StatusLogEntry[]> {
-  const { data, error } = await supabase.rpc("sapron_status_log");
+  const { data, error } = await (supabase.rpc as any)("sapron_status_log");
   if (error) throw new Error(`Erro sapron_status_log: ${error.message}`);
   return data as StatusLogEntry[];
 }
 
 async function fetchPropertiesList(): Promise<PropertyListItem[]> {
-  const { data, error } = await supabase.rpc("sapron_properties_list");
+  const { data, error } = await (supabase.rpc as any)("sapron_properties_list");
   if (error) throw new Error(`Erro sapron_properties_list: ${error.message}`);
   return data as PropertyListItem[];
 }
