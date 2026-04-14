@@ -5,6 +5,7 @@ import {
   fetchAllCardsForPhase,
   fetchCardsUpdatedSince,
   countFinalizadosHoje,
+  countEnteredPhaseToday,
   loadConfigFromServer,
 } from "@/lib/pipefy";
 import { getAtivosHojeSapron, clearSapronCache } from "@/lib/sapron";
@@ -22,6 +23,7 @@ export function usePipefyData() {
   const [error, setError] = useState<string | null>(null);
   const [entradasHoje, setEntradasHoje] = useState<TodayResult | null>(null);
   const [concluidosHoje, setConcluidosHoje] = useState<TodayResult | null>(null);
+  const [ativosFase10Hoje, setAtivosFase10Hoje] = useState<TodayResult | null>(null);
   const [snapshotEntradas, setSnapshotEntradas] = useState<TodayResult | null>(null);
   const [snapshotConcluidos, setSnapshotConcluidos] = useState<TodayResult | null>(null);
   const [snapshotReady, setSnapshotReady] = useState(false);
@@ -115,8 +117,13 @@ export function usePipefyData() {
           for (const card of [...stage1Cards, ...recentCards]) {
             allCardsMap.set(card.id, card);
           }
-          const finalizadosFinal = countFinalizadosHoje(Array.from(allCardsMap.values()), config.phase11);
+          const allCardsArray = Array.from(allCardsMap.values());
+          const finalizadosFinal = countFinalizadosHoje(allCardsArray, config.phase11);
           setConcluidosHoje(finalizadosFinal);
+
+          // Ativos Fase 10 hoje (entraram na fase 10 hoje)
+          const ativosFase10 = countEnteredPhaseToday(allCardsArray, config.phase10);
+          setAtivosFase10Hoje(ativosFase10);
 
           await persistSnapshot(ativosSapron, finalizadosFinal);
 
@@ -154,5 +161,5 @@ export function usePipefyData() {
   const effectiveEntradas = entradasHoje ?? snapshotEntradas;
   const effectiveConcluidos = concluidosHoje ?? snapshotConcluidos;
 
-  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, todayLoading, stage2Loading, stage2Duration, snapshotReady };
+  return { data, loading, error, fetchData, entradasHoje: effectiveEntradas, concluidosHoje: effectiveConcluidos, ativosFase10Hoje, todayLoading, stage2Loading, stage2Duration, snapshotReady };
 }

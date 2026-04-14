@@ -36,7 +36,7 @@ function formatTime(date: Date | null) {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { data, loading, error, fetchData, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, snapshotReady } = usePipefyData();
+  const { data, loading, error, fetchData, entradasHoje, concluidosHoje, ativosFase10Hoje, todayLoading, stage2Loading, stage2Duration, snapshotReady } = usePipefyData();
   const { dark, toggle: toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -279,6 +279,7 @@ const Index = () => {
                 phase10Cards={data?.phase10Cards ?? []}
                 phase5Cards={data?.phase5Cards ?? []}
                 entradasHoje={entradasHoje}
+                ativosFase10Hoje={ativosFase10Hoje}
                 concluidosHoje={concluidosHoje}
                 todayLoading={todayLoading}
                 stage2Loading={stage2Loading}

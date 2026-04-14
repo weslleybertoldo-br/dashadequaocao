@@ -62,6 +62,7 @@ interface OverviewPageProps {
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
   entradasHoje: TodayResult | null;
+  ativosFase10Hoje: TodayResult | null;
   concluidosHoje: TodayResult | null;
   todayLoading: boolean;
   stage2Loading: boolean;
@@ -125,7 +126,7 @@ function SortableHeader({
   );
 }
 
-export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, tablesLoading }: OverviewPageProps) {
+export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, ativosFase10Hoje, concluidosHoje, todayLoading, stage2Loading, stage2Duration, tablesLoading }: OverviewPageProps) {
   const pipe1Cards = phase10Cards;
 
   const [search1, setSearch1] = useState("");
@@ -205,7 +206,7 @@ export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, concluid
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {simpleStats.map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--elevation-sm)" }}>
             <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
@@ -213,8 +214,8 @@ export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, concluid
           </div>
         ))}
 
-        {/* Ativos hoje + Finalizados hoje wrapper */}
-        <div className="col-span-2 space-y-1.5">
+        {/* Ativos Sapron + Ativos Fase 10 + Finalizados Fase 11 */}
+        <div className="col-span-2 md:col-span-3 space-y-1.5">
           {/* Duration label or loading indicator */}
           <div className="h-4 flex items-center gap-1.5">
             {stage2Loading ? (
@@ -229,11 +230,11 @@ export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, concluid
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Ativos hoje */}
-            <div className="bg-card border border-border rounded-lg p-4">
+          <div className="grid grid-cols-3 gap-3">
+            {/* Ativos Sapron */}
+            <div className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <p className="text-xs text-muted-foreground">Ativos hoje</p>
+                <p className="text-xs text-muted-foreground">Ativos Sapron</p>
                 {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
               </div>
               {todayLoading && !entradasHoje ? (
@@ -252,10 +253,32 @@ export function OverviewPage({ phase10Cards, phase5Cards, entradasHoje, concluid
               )}
             </div>
 
-            {/* Finalizados hoje */}
-            <div className="bg-card border border-border rounded-lg p-4">
+            {/* Ativos Fase 10 */}
+            <div className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1">
-                <p className="text-xs text-muted-foreground">Finalizados hoje</p>
+                <p className="text-xs text-muted-foreground">Ativos Fase 10</p>
+                {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
+              </div>
+              {stage2Loading && !ativosFase10Hoje ? (
+                <Loader2 className="w-5 h-5 animate-spin text-primary mt-1" />
+              ) : ativosFase10Hoje && ativosFase10Hoje.count > 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-2xl font-mono font-bold text-foreground cursor-default">{ativosFase10Hoje.count}</p>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
+                    {ativosFase10Hoje.titles.join("\n")}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <p className="text-2xl font-mono font-bold text-foreground">{ativosFase10Hoje?.count ?? "—"}</p>
+              )}
+            </div>
+
+            {/* Finalizados Fase 11 */}
+            <div className="bg-card border border-border rounded-lg p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="text-xs text-muted-foreground">Finalizados Fase 11</p>
                 {stage2Loading && <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground/60" />}
               </div>
               {todayLoading && !concluidosHoje ? (

@@ -218,6 +218,14 @@ export interface TodayResult {
   titles: string[];
 }
 
+export function countEnteredPhaseToday(cards: PipefyCard[], phaseId: string): TodayResult {
+  const titles: string[] = [];
+  for (const card of cards) {
+    if (enteredPhaseTodayBRT(card, phaseId)) titles.push(card.title);
+  }
+  return { count: titles.length, titles };
+}
+
 export function countFinalizadosHoje(cards: PipefyCard[], phase11Id: string): TodayResult {
   const titles: string[] = [];
   for (const card of cards) {
