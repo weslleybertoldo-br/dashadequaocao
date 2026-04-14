@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/table";
 
 interface NoAdequacaoPageProps {
-  phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
 }
@@ -133,31 +132,27 @@ function SortableTable({
   );
 }
 
-export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAdequacaoPageProps) {
+export function NoAdequacaoPage({ phase10Cards, phase5Cards }: NoAdequacaoPageProps) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("pipe1-sem-pipe2");
 
-  // Tab 1: Cards in Phase 9/10 NOT in Phase 5
+  // Tab 1: Cards in Phase 10 NOT in Phase 5
   const cardsSemAdequacao = useMemo(() => {
     const phase5Titles = new Set(phase5Cards.map((c) => c.title.trim().toUpperCase()));
-    const allCards = [
-      ...phase9Cards.map((c) => ({ ...c, _phase: "Fase 9" })),
-      ...phase10Cards.map((c) => ({ ...c, _phase: "Fase 10" })),
-    ];
-    return allCards
+    return phase10Cards
       .filter((c) => !phase5Titles.has(c.title.trim().toUpperCase()))
       .map((card) => ({
         title: card.title,
-        phase: card._phase,
+        phase: "Fase 10",
         host: getField(card, "Anfitrião") || getField(card, "Anfitriao") || "—",
         days: getDaysInPhase(card),
       }));
-  }, [phase9Cards, phase10Cards, phase5Cards]);
+  }, [phase10Cards, phase5Cards]);
 
   // Tab 2: Cards in Phase 5 NOT in Phase 10
   const cardsSemPipe1 = useMemo(() => {
     const pipe1Titles = new Set(
-      [...phase9Cards, ...phase10Cards].map((c) => c.title.trim().toUpperCase())
+      phase10Cards.map((c) => c.title.trim().toUpperCase())
     );
     return phase5Cards
       .filter((c) => !pipe1Titles.has(c.title.trim().toUpperCase()))
@@ -167,7 +162,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
         host: getField(card, "Anfitrião") || getField(card, "Anfitriao") || "—",
         days: getDaysInPhase(card),
       }));
-  }, [phase9Cards, phase10Cards, phase5Cards]);
+  }, [phase10Cards, phase5Cards]);
 
   const currentCount = activeTab === "pipe1-sem-pipe2" ? cardsSemAdequacao.length : cardsSemPipe1.length;
 
@@ -194,10 +189,10 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-secondary border border-border rounded-full">
           <TabsTrigger value="pipe1-sem-pipe2" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            F9/F10 sem F5
+            F10 sem F5
           </TabsTrigger>
           <TabsTrigger value="pipe2-sem-pipe1" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            F5 sem F9/F10
+            F5 sem F10
           </TabsTrigger>
         </TabsList>
 
@@ -205,7 +200,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
           <SortableTable
             items={cardsSemAdequacao}
             search={search}
-            emptyMessage="Todos os imóveis das Fases 9/10 possuem adequação."
+            emptyMessage="Todos os imóveis da Fase 10 possuem adequação."
           />
         </TabsContent>
 
@@ -213,7 +208,7 @@ export function NoAdequacaoPage({ phase9Cards, phase10Cards, phase5Cards }: NoAd
           <SortableTable
             items={cardsSemPipe1}
             search={search}
-            emptyMessage="Todos os imóveis da Fase 5 estão nas Fases 9/10."
+            emptyMessage="Todos os imóveis da Fase 5 estão na Fase 10."
           />
         </TabsContent>
       </Tabs>

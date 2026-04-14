@@ -253,7 +253,6 @@ const Index = () => {
             )}
             {(data || entradasHoje || concluidosHoje) && (
               <OverviewPage
-                phase9Cards={data?.phase9Cards ?? []}
                 phase10Cards={data?.phase10Cards ?? []}
                 phase5Cards={data?.phase5Cards ?? []}
                 entradasHoje={entradasHoje}
@@ -280,7 +279,7 @@ const Index = () => {
               </div>
             )}
             {data && !loading && (
-              <HostPage phase9Cards={data.phase9Cards} phase10Cards={data.phase10Cards} />
+              <HostPage phase10Cards={data.phase10Cards} />
             )}
           </TabsContent>
 
@@ -304,7 +303,6 @@ const Index = () => {
               )}
               {data && !loading && (
                 <NoAdequacaoPage
-                  phase9Cards={data.phase9Cards}
                   phase10Cards={data.phase10Cards}
                   phase5Cards={data.phase5Cards}
                 />

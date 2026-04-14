@@ -12,7 +12,6 @@ import { salvarSnapshotHoje, lerSnapshotsHoje, salvarDiaSupabase, salvarUltimaAt
 import { hojeISO } from "@/hooks/useKPIHistory";
 
 interface PipefyData {
-  phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
   phase5Cards: PipefyCard[];
 }
@@ -80,16 +79,15 @@ export function usePipefyData() {
       const config = await loadConfigFromServer();
 
       // 2. THEN: fetch Pipefy data
-      const [phase9Cards, phase10Cards, phase5Cards] = await Promise.all([
-        fetchAllCardsForPhase(config.token, config.phase9),
+      const [phase10Cards, phase5Cards] = await Promise.all([
         fetchAllCardsForPhase(config.token, config.phase10),
         fetchAllCardsForPhase(config.token, config.phase5),
       ]);
 
-      setData({ phase9Cards, phase10Cards, phase5Cards });
+      setData({ phase10Cards, phase5Cards });
       setLoading(false);
 
-      const stage1Cards = [...phase9Cards, ...phase10Cards];
+      const stage1Cards = phase10Cards;
 
       // ── STAGE 2: Ativacoes via Sapron + Finalizados via Pipefy ──
       setStage2Loading(true);
@@ -134,7 +132,7 @@ export function usePipefyData() {
           } catch {
             setEntradasHoje({ count: 0, titles: [] });
           }
-          const finalizadosFallback = countFinalizadosHoje(phase10Cards, config.phase11);
+          const finalizadosFallback = countFinalizadosHoje(stage1Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
           setStage2Loading(false);
         });

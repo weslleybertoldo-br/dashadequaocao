@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/tooltip";
 
 interface HostPageProps {
-  phase9Cards: PipefyCard[];
   phase10Cards: PipefyCard[];
 }
 
@@ -18,14 +17,13 @@ interface HostData {
   name: string;
   cards: PipefyCard[];
   avgDays: number;
-  phase9Count: number;
   phase10Count: number;
 }
 
-type SortKey = "name" | "total" | "avgDays" | "phase9" | "phase10";
+type SortKey = "name" | "total" | "avgDays" | "phase10";
 type SortDir = "asc" | "desc";
 
-export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
+export function HostPage({ phase10Cards }: HostPageProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("total");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -40,10 +38,9 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
   };
 
   const hosts = useMemo(() => {
-    const allCards = [...phase9Cards, ...phase10Cards];
     const map = new Map<string, PipefyCard[]>();
 
-    allCards.forEach((card) => {
+    phase10Cards.forEach((card) => {
       const host = getField(card, "Anfitrião escolhido") || "Sem Anfitrião";
       if (!map.has(host)) map.set(host, []);
       map.get(host)!.push(card);
@@ -53,12 +50,11 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
       name,
       cards,
       avgDays: Math.round((cards.reduce((s, c) => s + getDaysInPhase(c), 0) / cards.length) * 10) / 10,
-      phase9Count: cards.filter((c) => phase9Cards.includes(c)).length,
-      phase10Count: cards.filter((c) => phase10Cards.includes(c)).length,
+      phase10Count: cards.length,
     }));
 
     return hostList;
-  }, [phase9Cards, phase10Cards]);
+  }, [phase10Cards]);
 
   const filtered = useMemo(() => {
     const list = hosts.filter((h) => h.name.toLowerCase().includes(search.toLowerCase()));
@@ -68,7 +64,6 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
         case "name": return mul * a.name.localeCompare(b.name);
         case "total": return mul * (a.cards.length - b.cards.length);
         case "avgDays": return mul * (a.avgDays - b.avgDays);
-        case "phase9": return mul * (a.phase9Count - b.phase9Count);
         case "phase10": return mul * (a.phase10Count - b.phase10Count);
         default: return 0;
       }
@@ -118,7 +113,6 @@ export function HostPage({ phase9Cards, phase10Cards }: HostPageProps) {
         <SortBtn label="Nome" k="name" />
         <SortBtn label="Total" k="total" />
         <SortBtn label="Média Dias" k="avgDays" />
-        <SortBtn label="Fase 9" k="phase9" />
         <SortBtn label="Fase 10" k="phase10" />
       </div>
 

@@ -25,14 +25,6 @@ export function ConfigPage() {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">ID Fase 9</Label>
-            <Input
-              value={config.phase9}
-              onChange={(e) => setConfig({ ...config, phase9: e.target.value })}
-              className="bg-secondary border-border font-mono text-sm"
-            />
-          </div>
-          <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">ID Fase 10</Label>
             <Input
               value={config.phase10}
