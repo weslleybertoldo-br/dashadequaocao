@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePipefyData } from "@/hooks/usePipefyData";
 import { loadConfig } from "@/lib/pipefy";
@@ -71,6 +71,16 @@ const Index = () => {
       setPasswordError(false);
     }
   };
+
+  // Badge: conta imóveis "sem adequação" (F10 sem F5 + F5 sem F10)
+  const semAdequacaoCount = useMemo(() => {
+    if (!data) return 0;
+    const phase10Titles = new Set(data.phase10Cards.map((c) => c.title.trim().toUpperCase()));
+    const phase5Titles = new Set(data.phase5Cards.map((c) => c.title.trim().toUpperCase()));
+    const f10SemF5 = data.phase10Cards.filter((c) => !phase5Titles.has(c.title.trim().toUpperCase())).length;
+    const f5SemF10 = data.phase5Cards.filter((c) => !phase10Titles.has(c.title.trim().toUpperCase())).length;
+    return f10SemF5 + f5SemF10;
+  }, [data]);
 
   const doRefresh = useCallback(() => {
     const config = loadConfig();
@@ -180,13 +190,18 @@ const Index = () => {
                   variant="ghost"
                   size="icon"
                   onClick={handleSettingsClick}
-                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                  className="text-muted-foreground hover:text-foreground h-8 w-8 relative"
                 >
                   <Settings className="w-4 h-4" />
+                  {semAdequacaoCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center leading-none">
+                      {semAdequacaoCount}
+                    </span>
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span className="detail-regular">Sem Adequação</span>
+                <span className="detail-regular">Sem Adequação{semAdequacaoCount > 0 ? ` (${semAdequacaoCount})` : ""}</span>
               </TooltipContent>
             </Tooltip>
 
