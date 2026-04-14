@@ -51,7 +51,7 @@ const Index = () => {
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashHex = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    if (hashHex === import.meta.env.VITE_UNLOCK_PASSWORD_HASH) {
+    if (hashHex === (import.meta.env.VITE_UNLOCK_PASSWORD_HASH || "").trim()) {
       setHiddenUnlocked(true);
       setShowPasswordDialog(false);
       setActiveTab("no-adequacao");
