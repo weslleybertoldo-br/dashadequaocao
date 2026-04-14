@@ -46,8 +46,12 @@ const Index = () => {
   const [passwordError, setPasswordError] = useState(false);
   const [hiddenUnlocked, setHiddenUnlocked] = useState(false);
 
-  const handleUnlockHidden = () => {
-    if (password === import.meta.env.VITE_UNLOCK_PASSWORD) {
+  const handleUnlockHidden = async () => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashHex = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    if (hashHex === import.meta.env.VITE_UNLOCK_PASSWORD_HASH) {
       setHiddenUnlocked(true);
       setShowPasswordDialog(false);
       setActiveTab("no-adequacao");
@@ -208,7 +212,11 @@ const Index = () => {
                   variant="ghost"
                   size="icon"
                   onClick={async () => {
-                    await supabase.auth.signOut();
+                    try {
+                      await supabase.auth.signOut();
+                    } catch (err) {
+                      console.error("Erro ao sair:", err);
+                    }
                     navigate("/login");
                   }}
                   className="text-muted-foreground hover:text-foreground h-8 w-8"

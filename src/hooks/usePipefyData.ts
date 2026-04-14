@@ -32,6 +32,7 @@ export function usePipefyData() {
   // Snapshot data ref — synchronously available after await
   const snapshotDataRef = useRef<{ entradas: TodayResult | null; concluidos: TodayResult | null }>({ entradas: null, concluidos: null });
   const snapshotPromiseRef = useRef<Promise<void> | null>(null);
+  const fetchingRef = useRef(false);
 
   // Load cached snapshots on mount — runs ONCE
   useEffect(() => {
@@ -64,6 +65,10 @@ export function usePipefyData() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    // Guard: previne double-fetch em cliques rápidos
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
     // 1. FIRST: ensure snapshot is loaded and applied
     if (snapshotPromiseRef.current) {
       await snapshotPromiseRef.current;
@@ -135,11 +140,13 @@ export function usePipefyData() {
           const finalizadosFallback = countFinalizadosHoje(stage1Cards, config.phase11);
           setConcluidosHoje(finalizadosFallback);
           setStage2Loading(false);
-        });
+        })
+        .finally(() => { fetchingRef.current = false; });
     } catch (err: any) {
       setError(err.message || "Erro ao buscar dados do Pipefy");
       setLoading(false);
       setTodayLoading(false);
+      fetchingRef.current = false;
     }
   }, [persistSnapshot]);
 

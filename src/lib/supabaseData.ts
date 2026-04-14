@@ -210,8 +210,8 @@ export async function migrarLocalStorageParaSupabase(): Promise<void> {
           ? parsed.imoveis ?? []
           : [];
       await salvarDiaSupabase(dataISO, tipo, total, imoveis);
-    } catch {
-      // skip
+    } catch (e) {
+      console.error(`Falha ao migrar KPI ${chave}:`, e instanceof Error ? e.message : e);
     }
   }
 
@@ -230,8 +230,8 @@ export async function migrarLocalStorageParaSupabase(): Promise<void> {
         excecao ?? "",
         observacao ?? ""
       );
-    } catch {
-      // skip
+    } catch (e) {
+      console.error(`Falha ao migrar exceção ${chave}:`, e instanceof Error ? e.message : e);
     }
   }
 

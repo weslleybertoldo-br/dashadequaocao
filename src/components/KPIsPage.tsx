@@ -408,6 +408,9 @@ export function KPIsPage({ entradasHoje, concluidosHoje }: KPIsPageProps) {
 
       setDadosMes(mapa);
       setLoadingMes(false);
+    }).catch((err) => {
+      console.error("Erro ao carregar dados KPI:", err);
+      setLoadingMes(false);
     });
   }, [ano, mes, semanas, anoReal, mesReal]);
 
